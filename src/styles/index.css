@@ -1,0 +1,31 @@
+/* Base styles for vue-git-stats components */
+
+:root {
+	/* Component defaults - can be overridden */
+	--vgs-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans',
+		Helvetica, Arial, sans-serif;
+	--vgs-border-radius: 6px;
+	--vgs-spacing: 16px;
+}
+
+/* Reset for consistency */
+.git-contribution-graph *,
+.git-stats-breakdown * {
+	box-sizing: border-box;
+}
+
+/* Utility classes */
+.vgs-loading {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 40px;
+}
+
+.vgs-error {
+	color: #f85149;
+	padding: 16px;
+	border: 1px solid #f85149;
+	border-radius: var(--vgs-border-radius);
+	background: rgba(248, 81, 73, 0.1);
+}
