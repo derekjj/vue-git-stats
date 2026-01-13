@@ -1,6 +1,6 @@
 {
 	"name": "vue-git-stats",
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"description": "Beautiful GitHub/GitLab contribution graphs and stats for Vue 3 with automated data fetching",
 	"author": "Derek Johnston derek@derekjohnston.ca",
 	"license": "MIT",
@@ -41,14 +41,13 @@
 		"dev": "vite",
 		"build": "vite build",
 		"preview": "vite preview",
-		"lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs --fix --ignore-path .gitignore",
+		"lint": "yarn lint:js && yarn lint:prettier",
 		"format": "prettier --write src/",
 		"demo": "vite demo --open",
 		"test:build": "npm run build && node -e \"console.log('✅ Build successful')\"",
 		"generate:dummy": "node -e \"import('./src/utils/generateDummyData.js').then(m => { const data = m.generateDummyStats(); console.log(JSON.stringify(data, null, 2)); })\"",
 		"lint:js": "eslint --ext \".js,.ts,.vue\" --ignore-path .gitignore .",
 		"lint:prettier": "prettier --check .",
-		"lint": "yarn lint:js && yarn lint:prettier",
 		"lintfix": "prettier --write --list-different . && npm lint:js --fix"
 	},
 	"peerDependencies": {
