@@ -6,13 +6,13 @@ export default {
 			username: 'derekjj',
 			platform: 'github',
 			// Secret name in GitHub Actions (not the actual token)
-			tokenSecret: 'GITHUB_TOKEN'
+			tokenSecret: 'GITHUB_TOKEN',
 		},
 		{
 			username: 'DerekJJ',
 			platform: 'gitlab',
-			tokenSecret: 'GITLAB_TOKEN'
-		}
+			tokenSecret: 'GITLAB_TOKEN',
+		},
 	],
 
 	// Where to save the generated data file
@@ -24,7 +24,7 @@ export default {
 	// Display options
 	display: {
 		colorScheme: 'green', // 'green' | 'blue' | 'purple' | 'orange'
-		showPrivateContributions: false
+		showPrivateContributions: false,
 	},
 
 	// Features to enable
@@ -41,6 +41,6 @@ export default {
 		// How long to cache data in browser (milliseconds)
 		browserTTL: 24 * 60 * 60 * 1000, // 24 hours
 		// Fallback to stale cache if fresh data unavailable
-		useStaleCache: true
-	}
+		useStaleCache: true,
+	},
 }

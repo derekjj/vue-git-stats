@@ -34,19 +34,19 @@ jobs:
           
           # Initialize JSON structure
           cat > stats_temp.json << 'EOF'
-{
-  "lastUpdated": "",
-  "profiles": [],
-  "totals": {
-    "projectCount": 0,
-    "commitCount": 0
-  },
-  "metadata": {
-    "fetchedAt": 0,
-    "source": "github_actions"
-  }
-}
-EOF
+          {
+            "lastUpdated": "",
+            "profiles": [],
+            "totals": {
+              "projectCount": 0,
+              "commitCount": 0
+            },
+            "metadata": {
+              "fetchedAt": 0,
+              "source": "github_actions"
+            }
+          }
+          EOF
           
           # Array to store profile data
           PROFILES_JSON="[]"
@@ -84,15 +84,15 @@ EOF
             
             # Fetch contribution graph
             CONTRIB_QUERY=$(cat <<GRAPHQL
-{
-  "query": "query(\$userName: String!, \$from: DateTime!, \$to: DateTime!) { user(login: \$userName) { contributionsCollection(from: \$from, to: \$to) { contributionCalendar { totalContributions weeks { contributionDays { contributionCount date weekday } firstDay } } } } }",
-  "variables": {
-    "userName": "$GITHUB_USERNAME",
-    "from": "$(date -u -d '1 year ago' +"%Y-%m-%dT00:00:00Z")",
-    "to": "$(date -u +"%Y-%m-%dT23:59:59Z")"
-  }
-}
-GRAPHQL
+            {
+              "query": "query(\$userName: String!, \$from: DateTime!, \$to: DateTime!) { user(login: \$userName) { contributionsCollection(from: \$from, to: \$to) { contributionCalendar { totalContributions weeks { contributionDays { contributionCount date weekday } firstDay } } } } }",
+              "variables": {
+                "userName": "$GITHUB_USERNAME",
+                "from": "$(date -u -d '1 year ago' +"%Y-%m-%dT00:00:00Z")",
+                "to": "$(date -u +"%Y-%m-%dT23:59:59Z")"
+              }
+            }
+            GRAPHQL
             )
             
             CONTRIB_DATA=$(curl -s -H "Authorization: bearer $GITHUB_TOKEN" \

@@ -73,9 +73,7 @@ async function init() {
 		console.log(
 			"  import { ContributionGraph, StatsBreakdown } from 'vue-git-stats'"
 		)
-		console.log(
-			`  <ContributionGraph data-url="${config.dataPath}" />\n`
-		)
+		console.log(`  <ContributionGraph data-url="${config.dataPath}" />\n`)
 	} catch (error) {
 		console.error('❌ Error during initialization:', error.message)
 		process.exit(1)

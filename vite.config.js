@@ -8,7 +8,7 @@ export default defineConfig({
 		lib: {
 			entry: resolve(__dirname, 'src/index.js'),
 			name: 'VueGitStats',
-			fileName: (format) => `vue-git-stats.${format}.js`
+			fileName: (format) => `vue-git-stats.${format}.js`,
 		},
 		rollupOptions: {
 			// Externalize deps that shouldn't be bundled
@@ -16,23 +16,23 @@ export default defineConfig({
 			output: {
 				// Global vars to use in UMD build for externalized deps
 				globals: {
-					vue: 'Vue'
+					vue: 'Vue',
 				},
 				// Export CSS separately
 				assetFileNames: (assetInfo) => {
 					if (assetInfo.name === 'style.css') return 'style.css'
 					return assetInfo.name
-				}
-			}
+				},
+			},
 		},
 		// Generate sourcemaps for debugging
 		sourcemap: true,
 		// Ensure compatibility
-		target: 'es2015'
+		target: 'es2015',
 	},
 	resolve: {
 		alias: {
-			'@': resolve(__dirname, 'src')
-		}
-	}
+			'@': resolve(__dirname, 'src'),
+		},
+	},
 })

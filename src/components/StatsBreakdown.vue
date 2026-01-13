@@ -69,7 +69,8 @@
 		<div class="stats-footer">
 			<small class="disclaimer">
 				<slot name="disclaimer">
-					* Stats based on public repositories from configured platforms *
+					* Stats based on public repositories from configured
+					platforms *
 				</slot>
 			</small>
 			<small v-if="dataSourceText" class="data-source">
@@ -90,39 +91,39 @@ export default {
 		// Data source URL
 		dataUrl: {
 			type: String,
-			default: '/data/git-stats.json'
+			default: '/data/git-stats.json',
 		},
 		// Which profiles to aggregate (empty = all)
 		profileIndexes: {
 			type: Array,
-			default: () => []
+			default: () => [],
 		},
 		// Experience data (for years calculation)
 		experienceData: {
 			type: Array,
-			default: () => []
+			default: () => [],
 		},
 		// Show custom stat (coffee consumption)
 		showCustomStat: {
 			type: Boolean,
-			default: true
+			default: true,
 		},
 		// Custom stat calculation function
 		customStatCalculator: {
 			type: Function,
-			default: null
+			default: null,
 		},
 		// Cache configuration
 		cacheTTL: {
 			type: Number,
-			default: 24 * 60 * 60 * 1000
-		}
+			default: 24 * 60 * 60 * 1000,
+		},
 	},
 	setup(props) {
 		// Use the shared composable
 		const { data, loading, dataSourceText, lastUpdatedText } = useGitStats({
 			dataUrl: props.dataUrl,
-			cacheTTL: props.cacheTTL
+			cacheTTL: props.cacheTTL,
 		})
 
 		const totalProjects = ref(0)
@@ -185,7 +186,7 @@ export default {
 				return props.customStatCalculator({
 					projects: totalProjects.value,
 					commits: totalCommits.value,
-					years: parseFloat(yearsExperience.value)
+					years: parseFloat(yearsExperience.value),
 				})
 			}
 
@@ -205,8 +206,7 @@ export default {
 		function calculateYears(startDate, endDate) {
 			endDate = endDate || new Date()
 			const millisecondsPerYear = 1000 * 60 * 60 * 24 * 365.25
-			const durationMilliseconds =
-				new Date(endDate) - new Date(startDate)
+			const durationMilliseconds = new Date(endDate) - new Date(startDate)
 			return durationMilliseconds / millisecondsPerYear
 		}
 
@@ -217,16 +217,17 @@ export default {
 			totalProjects,
 			totalCommits,
 			yearsExperience,
-			customStatValue
+			customStatValue,
 		}
-	}
+	},
 }
 </script>
 
 <style scoped>
 .git-stats-breakdown {
-	font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans',
-		Helvetica, Arial, sans-serif;
+	font-family:
+		-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica,
+		Arial, sans-serif;
 	padding: 40px 20px;
 	max-width: 1200px;
 	margin: 0 auto;
