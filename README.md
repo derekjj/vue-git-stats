@@ -1,5 +1,7 @@
 # vue-git-stats
 
+![Description of image](screenshot-black.png)
+
 > Beautiful GitHub/GitLab contribution graphs and stats for Vue 3 with automated data fetching via GitHub Actions
 
 [![npm version](https://badge.fury.io/js/vue-git-stats.svg)](https://www.npmjs.com/package/vue-git-stats)
