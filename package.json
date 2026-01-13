@@ -6,7 +6,7 @@
 	"license": "MIT",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/derekjj/vue-git-stats"
+		"url": "git+https://github.com/derekjj/vue-git-stats.git"
 	},
 	"keywords": [
 		"vue",
@@ -35,7 +35,7 @@
 		"cli"
 	],
 	"bin": {
-		"vue-git-stats": "./cli/init.js"
+		"vue-git-stats": "cli/init.js"
 	},
 	"scripts": {
 		"dev": "vite",
