@@ -7,7 +7,10 @@
 					{{ totalContributions.toLocaleString() }} contributions in
 					the last year
 				</h5>
-				<small class="data-source-text">
+				<small
+					class="data-source-text"
+					:class="{ 'is-dummy': isDummy }"
+				>
 					{{ dataSourceText }}
 				</small>
 			</div>
@@ -41,49 +44,53 @@
 
 		<!-- Contribution grid -->
 		<div v-else class="graph-container">
-			<!-- Month labels -->
-			<div class="months-row">
-				<div class="month-spacer"></div>
-				<div class="months-container">
-					<div
-						v-for="month in monthLabels"
-						:key="`${month.year}-${month.month}`"
-						class="month-label"
-						:style="{ gridColumn: `${month.week + 1} / span 1` }"
-					>
-						{{ month.label }}
+			<div class="graph-content-wrapper">
+				<!-- Month labels -->
+				<div class="months-row">
+					<div class="month-spacer"></div>
+					<div class="months-container">
+						<div
+							v-for="month in monthLabels"
+							:key="`${month.year}-${month.month}`"
+							class="month-label"
+							:style="{
+								gridColumn: `${month.week + 1} / span 1`,
+							}"
+						>
+							{{ month.label }}
+						</div>
 					</div>
 				</div>
-			</div>
 
-			<!-- Grid with day labels -->
-			<div class="grid-container">
-				<!-- Day labels -->
-				<div class="day-labels">
-					<div class="day-label">Mon</div>
-					<div class="day-label"></div>
-					<div class="day-label">Wed</div>
-					<div class="day-label"></div>
-					<div class="day-label">Fri</div>
-					<div class="day-label"></div>
-					<div class="day-label"></div>
-				</div>
+				<!-- Grid with day labels -->
+				<div class="grid-container">
+					<!-- Day labels -->
+					<div class="day-labels">
+						<div class="day-label">Mon</div>
+						<div class="day-label"></div>
+						<div class="day-label">Wed</div>
+						<div class="day-label"></div>
+						<div class="day-label">Fri</div>
+						<div class="day-label"></div>
+						<div class="day-label"></div>
+					</div>
 
-				<!-- Contribution squares -->
-				<div class="contribution-grid">
-					<div
-						v-for="week in contributionData"
-						:key="week.weekStart"
-						class="contribution-week"
-					>
+					<!-- Contribution squares -->
+					<div class="contribution-grid">
 						<div
-							v-for="day in week.days"
-							:key="day.date"
-							class="contribution-day"
-							:class="getContributionLevel(day.count)"
-							:title="getTooltipText(day)"
-							@click="onDayClick(day)"
-						></div>
+							v-for="week in contributionData"
+							:key="week.weekStart"
+							class="contribution-week"
+						>
+							<div
+								v-for="day in week.days"
+								:key="day.date"
+								class="contribution-day"
+								:class="getContributionLevel(day.count)"
+								:title="getTooltipText(day)"
+								@click="onDayClick(day)"
+							></div>
+						</div>
 					</div>
 				</div>
 			</div>
@@ -119,38 +126,39 @@ export default {
 		// Data source URL
 		dataUrl: {
 			type: String,
-			default: '/data/git-stats.json'
+			default: '/data/git-stats.json',
 		},
 		// Which profile to display (if multiple)
 		profileIndex: {
 			type: Number,
-			default: 0
+			default: 0,
 		},
 		// Color scheme
 		colorScheme: {
 			type: String,
 			default: 'green',
 			validator: (value) =>
-				['green', 'blue', 'purple', 'orange'].includes(value)
+				['green', 'blue', 'purple', 'orange'].includes(value),
 		},
 		// Show settings dropdown
 		showSettings: {
 			type: Boolean,
-			default: true
+			default: true,
 		},
 		// Cache configuration
 		cacheTTL: {
 			type: Number,
-			default: 24 * 60 * 60 * 1000 // 24 hours
-		}
+			default: 24 * 60 * 60 * 1000, // 24 hours
+		},
 	},
 	emits: ['day-click', 'color-scheme-change'],
 	setup(props, { emit }) {
 		// Use the shared composable
-		const { data, loading, dataSourceText, lastUpdatedText } = useGitStats({
-			dataUrl: props.dataUrl,
-			cacheTTL: props.cacheTTL
-		})
+		const { data, loading, dataSourceText, lastUpdatedText, isDummy } =
+			useGitStats({
+				dataUrl: props.dataUrl,
+				cacheTTL: props.cacheTTL,
+			})
 
 		const currentColorScheme = ref(props.colorScheme)
 		const settingsOpen = ref(false)
@@ -162,65 +170,129 @@ export default {
 		watch(
 			data,
 			(newData) => {
-				if (newData?.profiles?.[props.profileIndex]?.stats?.contributions) {
-					contributionData.value = processContributions(
+				if (
+					newData?.profiles?.[props.profileIndex]?.stats
+						?.contributions
+				) {
+					const contributions =
 						newData.profiles[props.profileIndex].stats.contributions
-					)
+					contributionData.value = processContributions(contributions)
 					generateMonthLabels()
+				} else {
+					// No data yet, use empty array
+					contributionData.value = []
 				}
 			},
 			{ immediate: true }
 		)
 
 		const totalContributions = computed(() => {
+			if (
+				!contributionData.value ||
+				contributionData.value.length === 0
+			) {
+				return 0
+			}
+
 			return contributionData.value.reduce((total, week) => {
+				if (!week.days || !Array.isArray(week.days)) {
+					return total
+				}
 				return (
 					total +
-					week.days.reduce((weekTotal, day) => weekTotal + day.count, 0)
+					week.days.reduce((weekTotal, day) => {
+						return weekTotal + (day.count || 0)
+					}, 0)
 				)
 			}, 0)
 		})
 
 		function processContributions(contributions) {
+			if (!contributions || !Array.isArray(contributions)) {
+				// Return empty 53 weeks
+				return generateEmptyWeeks()
+			}
+
 			// Ensure we have 53 weeks
-			const weeks = Array.isArray(contributions) ? contributions : []
+			const weeks = contributions.map((week) => ({
+				weekStart: week.firstDay || week.weekStart || '',
+				days: (week.contributionDays || week.days || []).map((day) => ({
+					date: day.date || '',
+					count:
+						day.contributionCount !== undefined
+							? day.contributionCount
+							: day.count || 0,
+					weekday: day.weekday || 0,
+				})),
+			}))
+
 			while (weeks.length < 53) {
-				weeks.push({
-					weekStart: new Date().toISOString().split('T')[0],
-					days: Array(7).fill({ date: '', count: 0 })
-				})
+				weeks.push(generateEmptyWeek())
+			}
+
+			return weeks
+		}
+
+		function generateEmptyWeeks() {
+			const weeks = []
+			for (let i = 0; i < 53; i++) {
+				weeks.push(generateEmptyWeek())
 			}
 			return weeks
 		}
 
+		function generateEmptyWeek() {
+			const days = []
+			for (let i = 0; i < 7; i++) {
+				days.push({
+					date: '',
+					count: 0,
+					weekday: i,
+				})
+			}
+			return {
+				weekStart: '',
+				days,
+			}
+		}
+
 		function generateMonthLabels() {
-			if (!contributionData.value || contributionData.value.length === 0)
+			if (
+				!contributionData.value ||
+				contributionData.value.length === 0
+			) {
+				monthLabels.value = []
 				return
+			}
 
 			const monthPositions = []
 			let lastMonth = -1
 			let lastYear = -1
 
 			contributionData.value.forEach((week, weekIndex) => {
-				if (week.days && week.days.length > 0) {
-					const firstDay = week.days[0].date
-					if (!firstDay) return
+				if (!week.days || week.days.length === 0) return
 
-					const [year, month] = firstDay.split('-').map(Number)
+				const firstDay = week.days[0].date
+				if (!firstDay) return
 
-					if (month !== lastMonth || year !== lastYear) {
-						const date = new Date(year, month - 1, 1)
-						monthPositions.push({
-							week: weekIndex,
-							month: month - 1,
-							year: year,
-							label: date.toLocaleDateString('en-US', {
-								month: 'short'
-							})
-						})
-						lastMonth = month
-						lastYear = year
-					}
+				const dateParts = firstDay.split('-')
+				if (dateParts.length !== 3) return
+
+				const [year, month] = dateParts.map(Number)
+				if (isNaN(year) || isNaN(month)) return
+
+				if (month !== lastMonth || year !== lastYear) {
+					const date = new Date(year, month - 1, 1)
+					monthPositions.push({
+						week: weekIndex,
+						month: month - 1,
+						year: year,
+						label: date.toLocaleDateString('en-US', {
+							month: 'short',
+						}),
+					})
+					lastMonth = month
+					lastYear = year
 				}
 			})
 
@@ -250,17 +322,18 @@ export default {
 				weekday: 'short',
 				year: 'numeric',
 				month: 'short',
-				day: 'numeric'
+				day: 'numeric',
 			})
 
-			const contributionText = day.count === 1 ? 'contribution' : 'contributions'
+			const contributionText =
+				day.count === 1 ? 'contribution' : 'contributions'
 			return `${day.count} ${contributionText} on ${formattedDate}`
 		}
 
 		function onDayClick(day) {
 			emit('day-click', {
 				date: day.date,
-				count: day.count
+				count: day.count,
 			})
 		}
 
@@ -278,6 +351,7 @@ export default {
 			loading,
 			dataSourceText,
 			lastUpdatedText,
+			isDummy,
 			contributionData,
 			monthLabels,
 			totalContributions,
@@ -288,16 +362,20 @@ export default {
 			getTooltipText,
 			onDayClick,
 			toggleSettings,
-			changeColorScheme
+			changeColorScheme,
 		}
-	}
+	},
 }
 </script>
 
 <style scoped>
+.graph-content-wrapper {
+	justify-items: anchor-center;
+}
 .git-contribution-graph {
-	font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans',
-		Helvetica, Arial, sans-serif;
+	font-family:
+		-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica,
+		Arial, sans-serif;
 	font-size: 12px;
 	background: transparent;
 	color: #e6edf3;
@@ -322,6 +400,14 @@ export default {
 
 .data-source-text {
 	color: #7d8590;
+}
+
+.data-source-text.is-dummy {
+	color: #f85149;
+	font-weight: 600;
+	background: rgba(248, 81, 73, 0.1);
+	padding: 2px 8px;
+	border-radius: 4px;
 }
 
 .settings-btn {
@@ -468,29 +554,69 @@ export default {
 }
 
 /* Color schemes */
-.contribution-day.level-0.green { background-color: #161b22; }
-.contribution-day.level-1.green { background-color: #0e4429; }
-.contribution-day.level-2.green { background-color: #006d32; }
-.contribution-day.level-3.green { background-color: #26a641; }
-.contribution-day.level-4.green { background-color: #39d353; }
+.contribution-day.level-0.green {
+	background-color: #161b22;
+}
+.contribution-day.level-1.green {
+	background-color: #0e4429;
+}
+.contribution-day.level-2.green {
+	background-color: #006d32;
+}
+.contribution-day.level-3.green {
+	background-color: #26a641;
+}
+.contribution-day.level-4.green {
+	background-color: #39d353;
+}
 
-.contribution-day.level-0.blue { background-color: #161b22; }
-.contribution-day.level-1.blue { background-color: #0a3069; }
-.contribution-day.level-2.blue { background-color: #1f6feb; }
-.contribution-day.level-3.blue { background-color: #58a6ff; }
-.contribution-day.level-4.blue { background-color: #79c0ff; }
+.contribution-day.level-0.blue {
+	background-color: #161b22;
+}
+.contribution-day.level-1.blue {
+	background-color: #0a3069;
+}
+.contribution-day.level-2.blue {
+	background-color: #1f6feb;
+}
+.contribution-day.level-3.blue {
+	background-color: #58a6ff;
+}
+.contribution-day.level-4.blue {
+	background-color: #79c0ff;
+}
 
-.contribution-day.level-0.purple { background-color: #161b22; }
-.contribution-day.level-1.purple { background-color: #3b1e6d; }
-.contribution-day.level-2.purple { background-color: #8250df; }
-.contribution-day.level-3.purple { background-color: #a475f9; }
-.contribution-day.level-4.purple { background-color: #d2a8ff; }
+.contribution-day.level-0.purple {
+	background-color: #161b22;
+}
+.contribution-day.level-1.purple {
+	background-color: #3b1e6d;
+}
+.contribution-day.level-2.purple {
+	background-color: #8250df;
+}
+.contribution-day.level-3.purple {
+	background-color: #a475f9;
+}
+.contribution-day.level-4.purple {
+	background-color: #d2a8ff;
+}
 
-.contribution-day.level-0.orange { background-color: #161b22; }
-.contribution-day.level-1.orange { background-color: #7d2d00; }
-.contribution-day.level-2.orange { background-color: #da7b00; }
-.contribution-day.level-3.orange { background-color: #ffa348; }
-.contribution-day.level-4.orange { background-color: #ffb366; }
+.contribution-day.level-0.orange {
+	background-color: #161b22;
+}
+.contribution-day.level-1.orange {
+	background-color: #7d2d00;
+}
+.contribution-day.level-2.orange {
+	background-color: #da7b00;
+}
+.contribution-day.level-3.orange {
+	background-color: #ffa348;
+}
+.contribution-day.level-4.orange {
+	background-color: #ffb366;
+}
 
 .contribution-day:hover {
 	outline: 1px solid #c9d1d9;

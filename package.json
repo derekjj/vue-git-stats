@@ -2,51 +2,67 @@
 	"name": "vue-git-stats",
 	"version": "0.1.0",
 	"description": "Beautiful GitHub/GitLab contribution graphs and stats for Vue 3 with automated data fetching",
-	"author": "Derek Johnston",
+	"author": "Derek Johnston derek@derekjohnston.ca",
 	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/derekjj/vue-git-stats"
+	},
+	"keywords": [
+		"vue",
+		"vue3",
+		"github",
+		"gitlab",
+		"contributions",
+		"stats",
+		"portfolio",
+		"developer",
+		"component"
+	],
 	"type": "module",
 	"main": "./dist/vue-git-stats.umd.js",
 	"module": "./dist/vue-git-stats.es.js",
 	"exports": {
-	  ".": {
-		"import": "./dist/vue-git-stats.es.js",
-		"require": "./dist/vue-git-stats.umd.js"
-	  },
-	  "./style.css": "./dist/style.css"
+		".": {
+			"import": "./dist/vue-git-stats.es.js",
+			"require": "./dist/vue-git-stats.umd.js"
+		},
+		"./style.css": "./dist/style.css"
 	},
 	"files": [
-	  "dist",
-	  "templates",
-	  "cli"
+		"dist",
+		"templates",
+		"cli"
 	],
 	"bin": {
-	  "vue-git-stats": "./cli/init.js"
+		"vue-git-stats": "./cli/init.js"
 	},
 	"scripts": {
-	  "dev": "vite",
-	  "build": "vite build",
-	  "prepublishOnly": "npm run build"
-	},
-	"keywords": [
-	  "vue",
-	  "vue3",
-	  "github",
-	  "gitlab",
-	  "contributions",
-	  "stats",
-	  "portfolio",
-	  "component"
-	],
-	"repository": {
-	  "type": "git",
-	  "url": "https://github.com/derekjj/vue-git-stats"
+		"dev": "vite",
+		"build": "vite build",
+		"preview": "vite preview",
+		"lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs --fix --ignore-path .gitignore",
+		"format": "prettier --write src/",
+		"demo": "vite demo --open",
+		"test:build": "npm run build && node -e \"console.log('✅ Build successful')\"",
+		"generate:dummy": "node -e \"import('./src/utils/generateDummyData.js').then(m => { const data = m.generateDummyStats(); console.log(JSON.stringify(data, null, 2)); })\"",
+		"lint:js": "eslint --ext \".js,.ts,.vue\" --ignore-path .gitignore .",
+		"lint:prettier": "prettier --check .",
+		"lint": "yarn lint:js && yarn lint:prettier",
+		"lintfix": "prettier --write --list-different . && npm lint:js --fix"
 	},
 	"peerDependencies": {
-	  "vue": "^3.3.0"
+		"vue": "^3.3.0"
 	},
 	"devDependencies": {
-	  "@vitejs/plugin-vue": "^5.0.0",
-	  "vite": "^5.0.0",
-	  "vue": "^3.4.0"
+		"@vitejs/plugin-vue": "^5.0.0",
+		"eslint": "^8.57.0",
+		"eslint-plugin-vue": "^9.20.0",
+		"prettier": "^3.2.0",
+		"vite": "^5.0.0",
+		"vue": "^3.4.0"
+	},
+	"engines": {
+		"node": ">=18.0.0"
 	}
-  }
+}

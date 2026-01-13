@@ -12,13 +12,14 @@ export function useGitStats(config = {}) {
 		dataUrl = '/data/git-stats.json',
 		cacheTTL = 24 * 60 * 60 * 1000, // 24 hours
 		useStaleCache = true,
-		cacheKey = 'git_stats_cache'
+		cacheKey = 'git_stats_cache',
 	} = config
 
 	const loading = ref(false)
 	const error = ref(null)
 	const data = ref(null)
-	const dataSource = ref(null) // 'static', 'cache', or 'mock'
+	const dataSource = ref(null) // 'static', 'cache', 'mock', or 'dummy'
+	const isDummy = ref(false) // True if using dummy/test data
 
 	/**
 	 * Load data with fallback strategy:
@@ -35,12 +36,14 @@ export function useGitStats(config = {}) {
 			const staticData = await loadFromStaticFile()
 			if (staticData) {
 				dataSource.value = 'static'
+				isDummy.value = staticData.metadata?.isDummy === true
 				data.value = staticData
 				cacheData(staticData)
 				return staticData
 			}
 		} catch (err) {
 			console.warn('Failed to load from static file:', err)
+			error.value = err.message
 		}
 
 		// Fallback to cached data
@@ -97,7 +100,7 @@ export function useGitStats(config = {}) {
 		try {
 			const cacheData = {
 				...data,
-				cachedAt: Date.now()
+				cachedAt: Date.now(),
 			}
 			localStorage.setItem(cacheKey, JSON.stringify(cacheData))
 		} catch (err) {
@@ -118,18 +121,18 @@ export function useGitStats(config = {}) {
 					stats: {
 						projectCount: 30,
 						commitCount: 2500,
-						contributions: generateMockContributions()
-					}
-				}
+						contributions: generateMockContributions(),
+					},
+				},
 			],
 			totals: {
 				projectCount: 30,
-				commitCount: 2500
+				commitCount: 2500,
 			},
 			metadata: {
 				source: 'mock',
-				fetchedAt: Date.now()
-			}
+				fetchedAt: Date.now(),
+			},
 		}
 	}
 
@@ -150,18 +153,16 @@ export function useGitStats(config = {}) {
 		for (let week = 0; week < 53; week++) {
 			const weekData = {
 				weekStart: new Date(currentDate).toISOString().split('T')[0],
-				days: []
+				days: [],
 			}
 
 			for (let day = 0; day < 7; day++) {
 				const isInFuture = currentDate > now
-				const dayCount = isInFuture
-					? 0
-					: Math.floor(Math.random() * 15)
+				const dayCount = isInFuture ? 0 : Math.floor(Math.random() * 15)
 
 				weekData.days.push({
 					date: new Date(currentDate).toISOString().split('T')[0],
-					count: dayCount
+					count: dayCount,
 				})
 				currentDate.setDate(currentDate.getDate() + 1)
 			}
@@ -192,7 +193,10 @@ export function useGitStats(config = {}) {
 		return date.toLocaleDateString('en-US', {
 			month: 'short',
 			day: 'numeric',
-			year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined
+			year:
+				date.getFullYear() !== now.getFullYear()
+					? 'numeric'
+					: undefined,
 		})
 	})
 
@@ -200,6 +204,10 @@ export function useGitStats(config = {}) {
 	 * Computed data source display text
 	 */
 	const dataSourceText = computed(() => {
+		if (isDummy.value) {
+			return '⚠️ Using dummy data for testing'
+		}
+
 		switch (dataSource.value) {
 			case 'static':
 				return 'Real-time data'
@@ -224,7 +232,8 @@ export function useGitStats(config = {}) {
 		dataSource,
 		dataSourceText,
 		lastUpdatedText,
+		isDummy,
 		loadData,
-		cacheData
+		cacheData,
 	}
 }

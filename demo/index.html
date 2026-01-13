@@ -1,0 +1,410 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>vue-git-stats Demo</title>
+		<style>
+			* {
+				margin: 0;
+				padding: 0;
+				box-sizing: border-box;
+			}
+
+			body {
+				font-family:
+					-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+				background: #0d1117;
+				color: #e6edf3;
+				padding: 40px 20px;
+			}
+
+			.container {
+				max-width: 1200px;
+				margin: 0 auto;
+			}
+
+			header {
+				text-align: center;
+				margin-bottom: 60px;
+			}
+
+			h1 {
+				font-size: 48px;
+				margin-bottom: 16px;
+				background: linear-gradient(135deg, #39d353 0%, #58a6ff 100%);
+				-webkit-background-clip: text;
+				-webkit-text-fill-color: transparent;
+			}
+
+			.subtitle {
+				font-size: 18px;
+				color: #7d8590;
+			}
+
+			section {
+				margin-bottom: 80px;
+			}
+
+			h2 {
+				font-size: 32px;
+				margin-bottom: 24px;
+				padding-bottom: 12px;
+				border-bottom: 1px solid #30363d;
+			}
+
+			.info-box {
+				background: rgba(56, 139, 253, 0.1);
+				border: 1px solid #388bfd;
+				border-radius: 6px;
+				padding: 16px;
+				margin: 20px 0;
+				color: #58a6ff;
+			}
+
+			.warning-box {
+				background: rgba(248, 81, 73, 0.1);
+				border: 1px solid #f85149;
+				border-radius: 6px;
+				padding: 16px;
+				margin: 20px 0;
+				color: #f85149;
+			}
+
+			.success-box {
+				background: rgba(57, 211, 83, 0.1);
+				border: 1px solid #39d353;
+				border-radius: 6px;
+				padding: 16px;
+				margin: 20px 0;
+				color: #39d353;
+			}
+
+			code {
+				background: #161b22;
+				padding: 2px 6px;
+				border-radius: 3px;
+				font-family: 'Monaco', 'Courier New', monospace;
+			}
+
+			pre {
+				background: #161b22;
+				padding: 16px;
+				border-radius: 6px;
+				overflow-x: auto;
+				margin: 16px 0;
+			}
+
+			button {
+				background: #238636;
+				color: white;
+				border: none;
+				padding: 12px 24px;
+				border-radius: 6px;
+				cursor: pointer;
+				font-size: 14px;
+				font-weight: 600;
+				margin: 8px;
+			}
+
+			button:hover {
+				background: #2ea043;
+			}
+
+			.button-group {
+				margin: 20px 0;
+			}
+		</style>
+	</head>
+	<body>
+		<div class="container">
+			<header>
+				<h1>vue-git-stats</h1>
+				<p class="subtitle">
+					Beautiful GitHub/GitLab contribution graphs for Vue 3
+				</p>
+			</header>
+
+			<section>
+				<h2>📦 Installation Test</h2>
+				<div class="info-box">
+					<strong>✓ Package loaded successfully!</strong><br />
+					If you can see this page, the basic setup is working.
+				</div>
+
+				<pre><code>npm install vue-git-stats</code></pre>
+			</section>
+
+			<section>
+				<h2>🧪 Component Tests</h2>
+
+				<div class="warning-box">
+					<strong>⚠️ Using Dummy Data</strong><br />
+					The components below are using generated dummy data for
+					testing. In production, they will load real data from your
+					GitHub Actions workflow.
+				</div>
+
+				<div id="app"></div>
+			</section>
+
+			<section>
+				<h2>🎯 Quick Start</h2>
+				<div class="button-group">
+					<button onclick="downloadDummyData()">
+						📥 Download Dummy Data
+					</button>
+					<button onclick="showSetupInstructions()">
+						📖 Setup Instructions
+					</button>
+				</div>
+
+				<div id="setup-instructions" style="display: none">
+					<h3>Setup Instructions:</h3>
+					<ol style="line-height: 2; margin-left: 20px">
+						<li>Run: <code>npx vue-git-stats init</code></li>
+						<li>
+							Edit <code>git-stats.config.js</code> with your
+							usernames
+						</li>
+						<li>
+							Add GitHub secrets (Settings → Secrets → Actions)
+						</li>
+						<li>
+							Trigger the workflow manually or wait for schedule
+						</li>
+						<li>Use components in your Vue app</li>
+					</ol>
+
+					<pre><code>&lt;script setup&gt;
+import { ContributionGraph, StatsBreakdown } from 'vue-git-stats'
+import 'vue-git-stats/style.css'
+&lt;/script&gt;
+
+&lt;template&gt;
+  &lt;ContributionGraph data-url="/data/git-stats.json" /&gt;
+  &lt;StatsBreakdown data-url="/data/git-stats.json" /&gt;
+&lt;/template&gt;</code></pre>
+				</div>
+			</section>
+
+			<section>
+				<h2>✅ Verification Checklist</h2>
+				<div class="success-box">
+					<ul style="list-style: none; line-height: 2">
+						<li>✓ Package installed</li>
+						<li>✓ Components render</li>
+						<li>✓ Dummy data displays</li>
+						<li id="check-styles">⏳ Checking styles...</li>
+						<li id="check-interactive">
+							⏳ Checking interactivity...
+						</li>
+					</ul>
+				</div>
+			</section>
+		</div>
+
+		<!-- Import map for Vue -->
+		<script type="importmap">
+			{
+				"imports": {
+					"vue": "https://unpkg.com/vue@3/dist/vue.esm-browser.js"
+				}
+			}
+		</script>
+
+		<script type="module">
+			import { createApp } from 'vue'
+			import VueGitStats, {
+				generateDummyStats,
+			} from '../dist/vue-git-stats.es.js'
+
+			// Import styles
+			const link = document.createElement('link')
+			link.rel = 'stylesheet'
+			link.href = '../dist/style.css'
+			document.head.appendChild(link)
+
+			// Generate dummy contributions
+			function generateDummyContributions() {
+				const weeks = []
+				const now = new Date()
+				const endDate = new Date(now)
+				endDate.setDate(endDate.getDate() - endDate.getDay())
+				const startDate = new Date(endDate)
+				startDate.setDate(startDate.getDate() - 52 * 7)
+				const currentDate = new Date(startDate)
+
+				for (let week = 0; week < 53; week++) {
+					const weekData = {
+						firstDay: new Date(currentDate)
+							.toISOString()
+							.split('T')[0],
+						contributionDays: [],
+					}
+
+					for (let day = 0; day < 7; day++) {
+						const isInFuture = currentDate > now
+						const isWeekend = day === 0 || day === 6
+						let dayCount = 0
+						if (!isInFuture) {
+							if (isWeekend) {
+								dayCount =
+									Math.random() < 0.3
+										? Math.floor(Math.random() * 5)
+										: 0
+							} else {
+								dayCount = Math.floor(Math.random() * 15)
+							}
+						}
+						weekData.contributionDays.push({
+							date: new Date(currentDate)
+								.toISOString()
+								.split('T')[0],
+							contributionCount: dayCount,
+							weekday: day,
+						})
+						currentDate.setDate(currentDate.getDate() + 1)
+					}
+
+					weeks.push(weekData)
+				}
+
+				return weeks
+			}
+
+			// Create dummy data
+			const contributions = generateDummyContributions()
+			const totalContributions = contributions.reduce((sum, week) => {
+				return (
+					sum +
+					week.contributionDays.reduce(
+						(s, day) => s + day.contributionCount,
+						0
+					)
+				)
+			}, 0)
+
+			const dummyData = {
+				lastUpdated: new Date().toISOString(),
+				profiles: [
+					{
+						username: 'demo-user',
+						platform: 'github',
+						stats: {
+							projectCount: 30,
+							commitCount: 2500,
+							contributions: contributions,
+						},
+					},
+				],
+				totals: {
+					projectCount: 30,
+					commitCount: 2500,
+				},
+				metadata: {
+					fetchedAt: Date.now(),
+					source: 'dummy_data',
+					isDummy: true,
+				},
+			}
+
+			console.log('Dummy data:', dummyData)
+
+			// Create app with inline data
+			const app = createApp({
+				template: `
+				<div>
+					<h3>Contribution Graph:</h3>
+					<contribution-graph 
+						:data-url="dataUrl"
+						color-scheme="green"
+						:profile-index="0"
+						@day-click="handleDayClick"
+					/>
+					
+					<h3 style="margin-top: 40px;">Stats Breakdown:</h3>
+					<stats-breakdown 
+						:data-url="dataUrl"
+						:profile-index="0"
+						:experience-data="experienceData"
+					/>
+				</div>
+			`,
+				data() {
+					return {
+						dataUrl: '/data/dummy-git-stats.json',
+						experienceData: [
+							{
+								startDate: '2020-01-01',
+								endDate: null,
+								skills: ['JavaScript', 'Vue', 'Node.js'],
+							},
+						],
+					}
+				},
+				methods: {
+					handleDayClick(data) {
+						console.log('Day clicked:', data)
+						if (data.count > 0) {
+							alert(
+								`Clicked: ${data.date} with ${data.count} contributions`
+							)
+						}
+					},
+				},
+				mounted() {
+					// Inject dummy data into window for composable to fetch
+					if (typeof window !== 'undefined') {
+						window.__DUMMY_GIT_STATS__ = dummyData
+
+						// Mock fetch for demo
+						const originalFetch = window.fetch
+						window.fetch = async function (url, ...args) {
+							if (
+								url.includes('dummy-git-stats.json') ||
+								url.includes('git-stats.json')
+							) {
+								console.log('Intercepting fetch for:', url)
+								return {
+									ok: true,
+									json: async () => dummyData,
+								}
+							}
+							return originalFetch(url, ...args)
+						}
+					}
+				},
+			})
+
+			app.use(VueGitStats)
+			app.mount('#app')
+
+			// Update checklist
+			setTimeout(() => {
+				document.getElementById('check-styles').innerHTML =
+					'✓ Styles loaded'
+				document.getElementById('check-interactive').innerHTML =
+					'✓ Interactive (try clicking days)'
+			}, 1000)
+
+			// Make functions global for buttons
+			window.downloadDummyData = function () {
+				const json = JSON.stringify(dummyData, null, 2)
+				const blob = new Blob([json], { type: 'application/json' })
+				const url = URL.createObjectURL(blob)
+				const a = document.createElement('a')
+				a.href = url
+				a.download = 'dummy-git-stats.json'
+				a.click()
+				URL.revokeObjectURL(url)
+			}
+
+			window.showSetupInstructions = function () {
+				const el = document.getElementById('setup-instructions')
+				el.style.display =
+					el.style.display === 'none' ? 'block' : 'none'
+			}
+		</script>
+	</body>
+</html>

@@ -15,6 +15,7 @@ npx vue-git-stats init
 ```
 
 This creates:
+
 - `git-stats.config.js`
 - `.github/workflows/update-git-stats.yml`
 - `public/data/` directory
@@ -25,26 +26,27 @@ Edit `git-stats.config.js`:
 
 ```javascript
 export default {
-  profiles: [
-    {
-      username: 'derekjj',
-      platform: 'github',
-      tokenSecret: 'GITHUB_TOKEN'
-    },
-    {
-      username: 'DerekJJ',
-      platform: 'gitlab',
-      tokenSecret: 'TOKEN_GITLAB' // Use your existing secret name
-    }
-  ],
-  dataPath: 'public/data/git-stats.json',
-  schedule: '0 2 * * *'
+	profiles: [
+		{
+			username: 'derekjj',
+			platform: 'github',
+			tokenSecret: 'GITHUB_TOKEN',
+		},
+		{
+			username: 'DerekJJ',
+			platform: 'gitlab',
+			tokenSecret: 'TOKEN_GITLAB', // Use your existing secret name
+		},
+	],
+	dataPath: 'public/data/git-stats.json',
+	schedule: '0 2 * * *',
 }
 ```
 
 ## Update Your Index Page
 
 **Before (your current code):**
+
 ```vue
 <template lang="pug">
 .container-fluid
@@ -60,16 +62,17 @@ export default {
 
 <script>
 export default {
-  methods: {
-    handleDayClick(data) {
-      console.log('Day clicked:', data)
-    }
-  }
+	methods: {
+		handleDayClick(data) {
+			console.log('Day clicked:', data)
+		},
+	},
 }
 </script>
 ```
 
 **After (using vue-git-stats):**
+
 ```vue
 <template lang="pug">
 .container-fluid
@@ -94,24 +97,24 @@ import 'vue-git-stats/style.css'
 import jsonAbout from '@/assets/about.json'
 
 export default {
-  components: {
-    ContributionGraph,
-    StatsBreakdown
-  },
-  data() {
-    return {
-      about: jsonAbout.about
-    }
-  },
-  methods: {
-    handleDayClick(data) {
-      console.log('Day clicked:', data)
-    },
-    handleColorSchemeChange(scheme) {
-      console.log('Color scheme:', scheme)
-      localStorage.setItem('git-stats-theme', scheme)
-    }
-  }
+	components: {
+		ContributionGraph,
+		StatsBreakdown,
+	},
+	data() {
+		return {
+			about: jsonAbout.about,
+		}
+	},
+	methods: {
+		handleDayClick(data) {
+			console.log('Day clicked:', data)
+		},
+		handleColorSchemeChange(scheme) {
+			console.log('Color scheme:', scheme)
+			localStorage.setItem('git-stats-theme', scheme)
+		},
+	},
 }
 </script>
 ```
@@ -123,20 +126,20 @@ The components are designed to blend with your existing styles. You can customiz
 ```css
 /* In your global styles or component */
 .git-contribution-graph {
-  /* Match your site's background */
-  background: transparent;
-  /* Or use your dark theme color */
-  background: #0d1117;
+	/* Match your site's background */
+	background: transparent;
+	/* Or use your dark theme color */
+	background: #0d1117;
 }
 
 .git-stats-breakdown {
-  /* Customize card colors to match your theme */
+	/* Customize card colors to match your theme */
 }
 
 .stat-card {
-  /* Match your card styles */
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+	/* Match your card styles */
+	background: rgba(255, 255, 255, 0.05);
+	border: 1px solid rgba(255, 255, 255, 0.1);
 }
 ```
 
@@ -162,10 +165,7 @@ The `StatsBreakdown` component can use your existing experience data:
 Then pass it to the component:
 
 ```vue
-<StatsBreakdown 
-  data-url="/data/git-stats.json"
-  :experience-data="about.exps"
-/>
+<StatsBreakdown data-url="/data/git-stats.json" :experience-data="about.exps" />
 ```
 
 ## Custom Coffee Calculation
@@ -173,9 +173,9 @@ Then pass it to the component:
 Want a different "fun stat"? Pass a custom calculator:
 
 ```vue
-<StatsBreakdown 
-  data-url="/data/git-stats.json"
-  :custom-stat-calculator="calculatePizzas"
+<StatsBreakdown
+	data-url="/data/git-stats.json"
+	:custom-stat-calculator="calculatePizzas"
 >
   <template #icon-custom>🍕</template>
   <template #custom-stat-label>Pizzas Ordered</template>
@@ -231,19 +231,23 @@ section.gitlab-stats
 ## Troubleshooting
 
 ### "Module not found: vue-git-stats"
+
 - Run `npm install vue-git-stats`
 - Restart your dev server
 
 ### Styles look wrong
+
 - Import the CSS: `import 'vue-git-stats/style.css'`
 - Check that CSS is loading in browser DevTools
 
 ### Data not loading
+
 - Verify `data-url` prop points to correct file
 - Check that workflow has run (go to Actions tab)
 - Look in browser console for errors
 
 ### Workflow fails
+
 - Verify secrets are added to GitHub
 - Check that usernames in config are correct
 - Review workflow logs for specific errors
@@ -255,11 +259,12 @@ section.gitlab-stats
 ✅ **Better tested** - Used by multiple developers  
 ✅ **More features** - New features added over time  
 ✅ **Documentation** - Comprehensive docs and examples  
-✅ **Community** - Get help from other users  
+✅ **Community** - Get help from other users
 
 ## Keep Your Custom Styling
 
 The library is designed to be unstyled by default, so your existing portfolio styles will work. The components use:
+
 - Transparent backgrounds
 - Inherit font families
 - Flexible layouts
