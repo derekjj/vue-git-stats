@@ -67,12 +67,6 @@
 
 		<!-- Footer -->
 		<div class="stats-footer">
-			<small class="disclaimer">
-				<slot name="disclaimer">
-					* Stats based on public repositories from configured
-					platforms *
-				</slot>
-			</small>
 			<small v-if="dataSourceText" class="data-source">
 				{{ dataSourceText }}
 				<span v-if="lastUpdatedText"> · {{ lastUpdatedText }}</span>
@@ -315,7 +309,6 @@ export default {
 	border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.disclaimer,
 .data-source {
 	font-size: 12px;
 	color: #7d8590;
