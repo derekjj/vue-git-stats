@@ -3,6 +3,7 @@
 import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
+import { pathToFileURL } from 'url'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -11,6 +12,14 @@ const __dirname = path.dirname(__filename)
  * Initialize vue-git-stats in a project
  */
 async function init() {
+	const args = process.argv.slice(2)
+
+	// Only run if the user explicitly types 'init'
+	if (args[0] !== 'init') {
+		console.log('Usage: npx vue-git-stats init')
+		return
+	}
+
 	console.log('🚀 Initializing vue-git-stats...\n')
 
 	try {
@@ -20,19 +29,35 @@ async function init() {
 
 		if (fs.existsSync(configPath)) {
 			console.log('✓ Found existing git-stats.config.js')
-			config = await import(configPath).then((m) => m.default)
+			// Use pathToFileURL for proper Windows path handling
+			const configUrl = pathToFileURL(configPath).href
+			config = await import(configUrl).then((m) => m.default)
 		} else {
 			console.log('✓ Creating git-stats.config.js...')
+
+			const templatePath = path.join(
+				__dirname,
+				'../templates/git-stats.config.js'
+			)
+
+			if (!fs.existsSync(templatePath)) {
+				throw new Error(
+					`Template not found at ${templatePath}. Ensure 'templates' folder is included in your npm package.`
+				)
+			}
+
 			const configTemplate = await fs.promises.readFile(
-				path.join(__dirname, '../templates/git-stats.config.js'),
+				templatePath,
 				'utf-8'
 			)
 			await fs.promises.writeFile(configPath, configTemplate)
-			config = await import(configPath).then((m) => m.default)
+
+			const configUrl = pathToFileURL(configPath).href
+			config = await import(configUrl).then((m) => m.default)
 		}
 
 		// 2. Create data directory
-		const dataDir = path.dirname(config.dataPath)
+		const dataDir = path.dirname(path.join(process.cwd(), config.dataPath))
 		if (!fs.existsSync(dataDir)) {
 			console.log(`✓ Creating directory: ${dataDir}`)
 			await fs.promises.mkdir(dataDir, { recursive: true })
