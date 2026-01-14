@@ -29,7 +29,6 @@ async function init() {
 
 		if (fs.existsSync(configPath)) {
 			console.log('✓ Found existing git-stats.config.js')
-			// Use pathToFileURL for proper Windows path handling
 			const configUrl = pathToFileURL(configPath).href
 			config = await import(configUrl).then((m) => m.default)
 		} else {
@@ -126,81 +125,11 @@ function generateWorkflow(config) {
 			const platformUpper = profile.platform.toUpperCase()
 
 			if (profile.platform === 'github') {
-				return `
-          # Fetch GitHub stats for ${profile.username}
-          if [ -n "$${platformUpper}_TOKEN" ]; then
-            echo "Fetching GitHub repositories for ${profile.username}..."
-            REPOS=$(curl -s -H "Authorization: token $${platformUpper}_TOKEN" \\
-              "https://api.github.com/users/${profile.username}/repos?per_page=100")
-            
-            REPO_COUNT=$(echo "$REPOS" | jq 'length')
-            echo "Found $REPO_COUNT repositories"
-            
-            COMMIT_COUNT=0
-            for repo in $(echo "$REPOS" | jq -r '.[].full_name'); do
-              COMMITS=$(curl -s -H "Authorization: token $${platformUpper}_TOKEN" \\
-                "https://api.github.com/repos/$repo/commits?per_page=100&author=${profile.username}")
-              REPO_COMMITS=$(echo "$COMMITS" | jq 'length')
-              COMMIT_COUNT=$((COMMIT_COUNT + REPO_COMMITS))
-              sleep 1
-            done
-            
-            # Fetch contribution graph
-            CONTRIB_QUERY='{"query":"query($userName: String!, $from: DateTime!, $to: DateTime!) { user(login: $userName) { contributionsCollection(from: $from, to: $to) { contributionCalendar { weeks { contributionDays { contributionCount date } firstDay } } } } }","variables":{"userName":"${profile.username}","from":"'$(date -u -d '1 year ago' +"%Y-%m-%dT00:00:00Z")'","to":"'$(date -u +"%Y-%m-%dT23:59:59Z")'"}}'
-            
-            CONTRIB_DATA=$(curl -s -H "Authorization: bearer $${platformUpper}_TOKEN" \\
-              -H "Content-Type: application/json" -X POST \\
-              -d "$CONTRIB_QUERY" https://api.github.com/graphql)
-            
-            CONTRIBUTIONS=$(echo "$CONTRIB_DATA" | jq -c '.data.user.contributionsCollection.contributionCalendar.weeks')
-            
-            PROFILE_DATA=$(jq -n \\
-              --arg username "${profile.username}" \\
-              --arg platform "github" \\
-              --argjson projectCount "$REPO_COUNT" \\
-              --argjson commitCount "$COMMIT_COUNT" \\
-              --argjson contributions "$CONTRIBUTIONS" \\
-              '{ username: $username, platform: $platform, stats: { projectCount: $projectCount, commitCount: $commitCount, contributions: $contributions } }')
-            
-            PROFILES_JSON=$(echo "$PROFILES_JSON" | jq --argjson profile "$PROFILE_DATA" '. += [$profile]')
-            TOTAL_PROJECTS=$((TOTAL_PROJECTS + REPO_COUNT))
-            TOTAL_COMMITS=$((TOTAL_COMMITS + COMMIT_COUNT))
-          fi`
+				return generateGitHubFetch(profile, platformUpper)
 			} else if (profile.platform === 'gitlab') {
-				return `
-          # Fetch GitLab stats for ${profile.username}
-          if [ -n "$${platformUpper}_TOKEN" ]; then
-            echo "Fetching GitLab projects for ${profile.username}..."
-            PROJECTS=$(curl -s -H "Private-Token: $${platformUpper}_TOKEN" \\
-              "https://gitlab.com/api/v4/users/${profile.username}/projects?per_page=100")
-            
-            if echo "$PROJECTS" | jq -e 'type == "array"' > /dev/null 2>&1; then
-              PROJECT_COUNT=$(echo "$PROJECTS" | jq 'length')
-              
-              COMMIT_COUNT=0
-              for project_id in $(echo "$PROJECTS" | jq -r '.[].id'); do
-                COMMITS=$(curl -s -H "Private-Token: $${platformUpper}_TOKEN" \\
-                  "https://gitlab.com/api/v4/projects/$project_id/repository/commits?per_page=100")
-                
-                if echo "$COMMITS" | jq -e 'type == "array"' > /dev/null 2>&1; then
-                  PROJECT_COMMITS=$(echo "$COMMITS" | jq 'length')
-                  COMMIT_COUNT=$((COMMIT_COUNT + PROJECT_COMMITS))
-                fi
-                sleep 1
-              done
-              
-              PROFILE_DATA=$(jq -n \\
-                --arg username "${profile.username}" \\
-                --arg platform "gitlab" \\
-                --argjson projectCount "$PROJECT_COUNT" \\
-                --argjson commitCount "$COMMIT_COUNT" \\
-                '{ username: $username, platform: $platform, stats: { projectCount: $projectCount, commitCount: $commitCount } }')
-              
-              PROFILES_JSON=$(echo "$PROFILES_JSON" | jq --argjson profile "$PROFILE_DATA" '. += [$profile]')
-              TOTAL_PROJECTS=$((TOTAL_PROJECTS + PROJECT_COUNT))
-              TOTAL_COMMITS=$((TOTAL_COMMITS + COMMIT_COUNT))
-            fi
-          fi`
+				return generateGitLabFetch(profile, platformUpper)
+			} else if (profile.platform === 'bitbucket') {
+				return generateBitbucketFetch(profile, platformUpper)
 			}
 
 			return ''
@@ -266,6 +195,131 @@ ${envVars}
           git commit -m "chore: update git stats [skip ci]"
           git push
 `
+}
+
+function generateGitHubFetch(profile, platformUpper) {
+	return `
+          # Fetch GitHub stats for ${profile.username}
+          if [ -n "$${platformUpper}_TOKEN" ]; then
+            echo "Fetching GitHub repositories for ${profile.username}..."
+            REPOS=$(curl -s -H "Authorization: token $${platformUpper}_TOKEN" \\
+              "https://api.github.com/users/${profile.username}/repos?per_page=100")
+            
+            REPO_COUNT=$(echo "$REPOS" | jq 'length')
+            echo "Found $REPO_COUNT repositories"
+            
+            COMMIT_COUNT=0
+            for repo in $(echo "$REPOS" | jq -r '.[].full_name'); do
+              COMMITS=$(curl -s -H "Authorization: token $${platformUpper}_TOKEN" \\
+                "https://api.github.com/repos/$repo/commits?per_page=100&author=${profile.username}")
+              REPO_COMMITS=$(echo "$COMMITS" | jq 'length')
+              COMMIT_COUNT=$((COMMIT_COUNT + REPO_COMMITS))
+              sleep 1
+            done
+            
+            # Fetch contribution graph
+            CONTRIB_QUERY='{"query":"query($userName: String!, $from: DateTime!, $to: DateTime!) { user(login: $userName) { contributionsCollection(from: $from, to: $to) { contributionCalendar { weeks { contributionDays { contributionCount date } firstDay } } } } }","variables":{"userName":"${profile.username}","from":"'$(date -u -d '1 year ago' +"%Y-%m-%dT00:00:00Z")'","to":"'$(date -u +"%Y-%m-%dT23:59:59Z")'"}}'
+            
+            CONTRIB_DATA=$(curl -s -H "Authorization: bearer $${platformUpper}_TOKEN" \\
+              -H "Content-Type: application/json" -X POST \\
+              -d "$CONTRIB_QUERY" https://api.github.com/graphql)
+            
+            CONTRIBUTIONS=$(echo "$CONTRIB_DATA" | jq -c '.data.user.contributionsCollection.contributionCalendar.weeks')
+            
+            PROFILE_DATA=$(jq -n \\
+              --arg username "${profile.username}" \\
+              --arg platform "github" \\
+              --argjson projectCount "$REPO_COUNT" \\
+              --argjson commitCount "$COMMIT_COUNT" \\
+              --argjson contributions "$CONTRIBUTIONS" \\
+              '{ username: $username, platform: $platform, stats: { projectCount: $projectCount, commitCount: $commitCount, contributions: $contributions } }')
+            
+            PROFILES_JSON=$(echo "$PROFILES_JSON" | jq --argjson profile "$PROFILE_DATA" '. += [$profile]')
+            TOTAL_PROJECTS=$((TOTAL_PROJECTS + REPO_COUNT))
+            TOTAL_COMMITS=$((TOTAL_COMMITS + COMMIT_COUNT))
+          fi`
+}
+
+function generateGitLabFetch(profile, platformUpper) {
+	return `
+          # Fetch GitLab stats for ${profile.username}
+          if [ -n "$${platformUpper}_TOKEN" ]; then
+            echo "Fetching GitLab projects for ${profile.username}..."
+            PROJECTS=$(curl -s -H "Private-Token: $${platformUpper}_TOKEN" \\
+              "https://gitlab.com/api/v4/users/${profile.username}/projects?per_page=100")
+            
+            if echo "$PROJECTS" | jq -e 'type == "array"' > /dev/null 2>&1; then
+              PROJECT_COUNT=$(echo "$PROJECTS" | jq 'length')
+              
+              COMMIT_COUNT=0
+              for project_id in $(echo "$PROJECTS" | jq -r '.[].id'); do
+                COMMITS=$(curl -s -H "Private-Token: $${platformUpper}_TOKEN" \\
+                  "https://gitlab.com/api/v4/projects/$project_id/repository/commits?per_page=100")
+                
+                if echo "$COMMITS" | jq -e 'type == "array"' > /dev/null 2>&1; then
+                  PROJECT_COMMITS=$(echo "$COMMITS" | jq 'length')
+                  COMMIT_COUNT=$((COMMIT_COUNT + PROJECT_COMMITS))
+                fi
+                sleep 1
+              done
+              
+              PROFILE_DATA=$(jq -n \\
+                --arg username "${profile.username}" \\
+                --arg platform "gitlab" \\
+                --argjson projectCount "$PROJECT_COUNT" \\
+                --argjson commitCount "$COMMIT_COUNT" \\
+                '{ username: $username, platform: $platform, stats: { projectCount: $projectCount, commitCount: $commitCount } }')
+              
+              PROFILES_JSON=$(echo "$PROFILES_JSON" | jq --argjson profile "$PROFILE_DATA" '. += [$profile]')
+              TOTAL_PROJECTS=$((TOTAL_PROJECTS + PROJECT_COUNT))
+              TOTAL_COMMITS=$((TOTAL_COMMITS + COMMIT_COUNT))
+            fi
+          fi`
+}
+
+function generateBitbucketFetch(profile, platformUpper) {
+	return `
+          # Fetch Bitbucket stats for ${profile.username}
+          if [ -n "$${platformUpper}_TOKEN" ]; then
+            echo "Fetching Bitbucket repositories for ${profile.username}..."
+            
+            # Bitbucket uses username:app_password for basic auth
+            REPOS=$(curl -s -u "${profile.username}:$${platformUpper}_TOKEN" \\
+              "https://api.bitbucket.org/2.0/repositories/${profile.username}?pagelen=100")
+            
+            if echo "$REPOS" | jq -e '.values | type == "array"' > /dev/null 2>&1; then
+              REPO_COUNT=$(echo "$REPOS" | jq '.values | length')
+              echo "Found $REPO_COUNT repositories"
+              
+              COMMIT_COUNT=0
+              for repo_slug in $(echo "$REPOS" | jq -r '.values[].slug'); do
+                echo "Fetching commits for $repo_slug..."
+                COMMITS=$(curl -s -u "${profile.username}:$${platformUpper}_TOKEN" \\
+                  "https://api.bitbucket.org/2.0/repositories/${profile.username}/$repo_slug/commits?pagelen=100")
+                
+                if echo "$COMMITS" | jq -e '.values | type == "array"' > /dev/null 2>&1; then
+                  REPO_COMMITS=$(echo "$COMMITS" | jq '.values | length')
+                  COMMIT_COUNT=$((COMMIT_COUNT + REPO_COMMITS))
+                fi
+                sleep 1
+              done
+              
+              echo "Total commits: $COMMIT_COUNT"
+              
+              PROFILE_DATA=$(jq -n \\
+                --arg username "${profile.username}" \\
+                --arg platform "bitbucket" \\
+                --argjson projectCount "$REPO_COUNT" \\
+                --argjson commitCount "$COMMIT_COUNT" \\
+                '{ username: $username, platform: $platform, stats: { projectCount: $projectCount, commitCount: $commitCount } }')
+              
+              PROFILES_JSON=$(echo "$PROFILES_JSON" | jq --argjson profile "$PROFILE_DATA" '. += [$profile]')
+              TOTAL_PROJECTS=$((TOTAL_PROJECTS + PROJECT_COUNT))
+              TOTAL_COMMITS=$((TOTAL_COMMITS + COMMIT_COUNT))
+            else
+              echo "Bitbucket API returned an error or no repositories found"
+            fi
+          fi`
 }
 
 // Run the init function

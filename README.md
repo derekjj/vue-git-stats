@@ -2,7 +2,7 @@
 
 ![Description of image](screenshot-black.png)
 
-> Beautiful GitHub/GitLab contribution graphs and stats for Vue 3 with automated data fetching via GitHub Actions
+> Beautiful GitHub/GitLab/Bitbucket contribution graphs and stats for Vue 3 with automated data fetching via GitHub Actions
 
 [![npm version](https://img.shields.io/npm/v/vue-git-stats.svg)](https://www.npmjs.com/package/vue-git-stats)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -36,6 +36,7 @@ npx vue-git-stats init
 ```
 
 This creates:
+
 - `git-stats.config.js` - Configuration file
 - `.github/workflows/update-git-stats.yml` - GitHub Action workflow
 - `public/data/` - Directory for stats data
@@ -46,43 +47,64 @@ Edit `git-stats.config.js`:
 
 ```javascript
 export default {
-  profiles: [
-    {
-      username: 'your-github-username',
-      platform: 'github',
-      tokenSecret: 'GITHUB_TOKEN'
-    },
-    {
-      username: 'your-gitlab-username',
-      platform: 'gitlab',
-      tokenSecret: 'GITLAB_TOKEN'
-    }
-  ],
-  dataPath: 'public/data/git-stats.json',
-  schedule: '0 2 * * *', // Daily at 2 AM UTC
+	profiles: [
+		{
+			username: 'your-github-username',
+			platform: 'github',
+			tokenSecret: 'GITHUB_TOKEN',
+		},
+		{
+			username: 'your-gitlab-username',
+			platform: 'gitlab',
+			tokenSecret: 'GITLAB_TOKEN',
+		},
+		{
+			username: 'your-bitbucket-username',
+			platform: 'bitbucket',
+			tokenSecret: 'BITBUCKET_TOKEN',
+		},
+	],
+	dataPath: 'public/data/git-stats.json',
+	schedule: '0 2 * * *', // Daily at 2 AM UTC
 }
 ```
 
 ### 3. Add GitHub Secrets
 
 Go to your repository **Settings → Secrets and variables → Actions** and add:
+
 - `GITHUB_TOKEN` (automatically provided by GitHub)
-- `GITLAB_TOKEN` (if using GitLab)
+- `GITLAB_TOKEN` (if using GitLab - create a Personal Access Token)
+- `BITBUCKET_TOKEN` (if using Bitbucket - create an App Password)
+
+#### Creating Tokens:
+
+**GitHub**: No action needed - `GITHUB_TOKEN` is automatically available
+
+**GitLab**:
+
+1. Go to https://gitlab.com/-/profile/personal_access_tokens
+2. Create token with `read_api` scope
+3. Add as `GITLAB_TOKEN` secret
+
+**Bitbucket**:
+
+1. Go to https://bitbucket.org/account/settings/app-passwords/
+2. Create App Password with `repository:read` permission
+3. Add as `BITBUCKET_TOKEN` secret
 
 ### 4. Use in your Vue components
 
 ```vue
 <template>
-  <div>
-    <ContributionGraph 
-      data-url="/data/git-stats.json"
-      color-scheme="green"
-    />
-    
-    <StatsBreakdown 
-      data-url="/data/git-stats.json"
-    />
-  </div>
+	<div>
+		<ContributionGraph
+			data-url="/data/git-stats.json"
+			color-scheme="green"
+		/>
+
+		<StatsBreakdown data-url="/data/git-stats.json" />
+	</div>
 </template>
 
 <script setup>
@@ -98,6 +120,7 @@ import 'vue-git-stats/style.css'
 Displays a GitHub-style contribution heatmap.
 
 **Props:**
+
 - `dataUrl` (String) - Path to stats JSON file (default: `/data/git-stats.json`)
 - `profileIndex` (Number) - Which profile to display if you have multiple (default: `0`)
 - `colorScheme` (String) - Color theme: `green`, `blue`, `purple`, `orange` (default: `green`)
@@ -105,17 +128,19 @@ Displays a GitHub-style contribution heatmap.
 - `cacheTTL` (Number) - Cache duration in milliseconds (default: `24 hours`)
 
 **Events:**
+
 - `@day-click` - Emitted when a day is clicked `{ date, count }`
 - `@color-scheme-change` - Emitted when color scheme changes
 
 **Example:**
+
 ```vue
-<ContributionGraph 
-  data-url="/data/git-stats.json"
-  :profile-index="0"
-  color-scheme="blue"
-  :show-settings="true"
-  @day-click="handleDayClick"
+<ContributionGraph
+	data-url="/data/git-stats.json"
+	:profile-index="0"
+	color-scheme="blue"
+	:show-settings="true"
+	@day-click="handleDayClick"
 />
 ```
 
@@ -124,15 +149,14 @@ Displays a GitHub-style contribution heatmap.
 Displays project and commit count statistics.
 
 **Props:**
+
 - `dataUrl` (String) - Path to stats JSON file
 - `profileIndex` (Number) - Which profile to display
 
 **Example:**
+
 ```vue
-<StatsBreakdown 
-  data-url="/data/git-stats.json"
-  :profile-index="0"
-/>
+<StatsBreakdown data-url="/data/git-stats.json" :profile-index="0" />
 ```
 
 ## Configuration
@@ -142,45 +166,66 @@ Displays project and commit count statistics.
 ```javascript
 // git-stats.config.js
 export default {
-  // Profiles to fetch stats from
-  profiles: [
-    {
-      username: 'username',
-      platform: 'github', // 'github' | 'gitlab' | 'bitbucket'
-      tokenSecret: 'GITHUB_TOKEN' // GitHub secret name
-    }
-  ],
-  
-  // Data file location
-  dataPath: 'public/data/git-stats.json',
-  
-  // Update schedule (cron format)
-  schedule: '0 2 * * *',
-  
-  // Display options
-  display: {
-    colorScheme: 'green',
-    showPrivateContributions: false
-  },
-  
-  // Features to enable
-  features: {
-    contributionGraph: true,
-    statsBreakdown: true
-  },
-  
-  // Browser caching
-  cache: {
-    browserTTL: 24 * 60 * 60 * 1000, // 24 hours
-    useStaleCache: true
-  }
+	// Profiles to fetch stats from
+	profiles: [
+		{
+			username: 'username',
+			platform: 'github', // 'github' | 'gitlab' | 'bitbucket'
+			tokenSecret: 'GITHUB_TOKEN', // GitHub secret name
+		},
+	],
+
+	// Data file location
+	dataPath: 'public/data/git-stats.json',
+
+	// Update schedule (cron format)
+	schedule: '0 2 * * *',
+
+	// Display options
+	display: {
+		colorScheme: 'green',
+		showPrivateContributions: false,
+	},
+
+	// Features to enable
+	features: {
+		contributionGraph: true,
+		statsBreakdown: true,
+	},
+
+	// Browser caching
+	cache: {
+		browserTTL: 24 * 60 * 60 * 1000, // 24 hours
+		useStaleCache: true,
+	},
 }
 ```
+
+## Platform-Specific Notes
+
+### GitHub
+
+- Contribution graph shows full year of activity
+- Includes contribution heatmap visualization
+- Supports private repositories (if token has access)
+
+### GitLab
+
+- Project and commit counts only
+- No contribution graph (GitLab API doesn't provide this data)
+- Supports private repositories (if token has access)
+
+### Bitbucket
+
+- Repository and commit counts only
+- No contribution graph (Bitbucket API doesn't provide this data)
+- Requires App Password (not regular password)
+- Authentication uses username:password format
 
 ## How It Works
 
 1. **GitHub Actions** runs on a schedule (e.g., daily)
-2. **Fetches data** from configured platforms (GitHub, GitLab, etc.)
+2. **Fetches data** from configured platforms (GitHub, GitLab, Bitbucket)
 3. **Saves to static file** in your repository
 4. **Components load** from the static file (fast, reliable)
 5. **Falls back** to cache or mock data if file unavailable
@@ -202,19 +247,19 @@ export default {
 import { useGitStats } from 'vue-git-stats'
 
 const { data, loading, dataSourceText, lastUpdatedText } = useGitStats({
-  dataUrl: '/data/git-stats.json',
-  cacheTTL: 24 * 60 * 60 * 1000,
-  useStaleCache: true
+	dataUrl: '/data/git-stats.json',
+	cacheTTL: 24 * 60 * 60 * 1000,
+	useStaleCache: true,
 })
 </script>
 
 <template>
-  <div v-if="loading">Loading...</div>
-  <div v-else>
-    <p>{{ dataSourceText }}</p>
-    <p>{{ lastUpdatedText }}</p>
-    <pre>{{ JSON.stringify(data, null, 2) }}</pre>
-  </div>
+	<div v-if="loading">Loading...</div>
+	<div v-else>
+		<p>{{ dataSourceText }}</p>
+		<p>{{ lastUpdatedText }}</p>
+		<pre>{{ JSON.stringify(data, null, 2) }}</pre>
+	</div>
 </template>
 ```
 
@@ -222,13 +267,16 @@ const { data, loading, dataSourceText, lastUpdatedText } = useGitStats({
 
 ```vue
 <template>
-  <div>
-    <h2>GitHub Stats</h2>
-    <ContributionGraph :profile-index="0" />
-    
-    <h2>GitLab Stats</h2>
-    <ContributionGraph :profile-index="1" />
-  </div>
+	<div>
+		<h2>GitHub Stats</h2>
+		<ContributionGraph :profile-index="0" />
+
+		<h2>GitLab Stats</h2>
+		<ContributionGraph :profile-index="1" />
+
+		<h2>Bitbucket Stats</h2>
+		<ContributionGraph :profile-index="2" />
+	</div>
 </template>
 ```
 
@@ -238,9 +286,9 @@ Override CSS variables:
 
 ```css
 .git-contribution-graph {
-  --graph-bg: #0d1117;
-  --graph-text: #e6edf3;
-  --graph-border: #30363d;
+	--graph-bg: #0d1117;
+	--graph-text: #e6edf3;
+	--graph-border: #30363d;
 }
 ```
 
@@ -250,26 +298,28 @@ The generated JSON file has this structure:
 
 ```json
 {
-  "lastUpdated": "2026-01-11T02:00:00Z",
-  "profiles": [
-    {
-      "username": "derekjj",
-      "platform": "github",
-      "stats": {
-        "projectCount": 45,
-        "commitCount": 2500,
-        "contributions": [ /* 53 weeks of data */ ]
-      }
-    }
-  ],
-  "totals": {
-    "projectCount": 45,
-    "commitCount": 2500
-  },
-  "metadata": {
-    "fetchedAt": 1736564400000,
-    "source": "github_actions"
-  }
+	"lastUpdated": "2026-01-11T02:00:00Z",
+	"profiles": [
+		{
+			"username": "derekjj",
+			"platform": "github",
+			"stats": {
+				"projectCount": 45,
+				"commitCount": 2500,
+				"contributions": [
+					/* 53 weeks of data */
+				]
+			}
+		}
+	],
+	"totals": {
+		"projectCount": 45,
+		"commitCount": 2500
+	},
+	"metadata": {
+		"fetchedAt": 1736564400000,
+		"source": "github_actions"
+	}
 }
 ```
 
@@ -279,7 +329,13 @@ The generated JSON file has this structure:
 
 - Check that secrets are added correctly
 - Verify usernames match your actual profiles
-- Check rate limits on GitHub/GitLab APIs
+- Check rate limits on GitHub/GitLab/Bitbucket APIs
+
+### Bitbucket Authentication Fails
+
+- Ensure you're using an App Password, not your account password
+- Verify the App Password has `repository:read` permission
+- Check that the username matches your Bitbucket username exactly
 
 ### Component shows "Using sample data"
 

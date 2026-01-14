@@ -3,15 +3,22 @@ export default {
 	// Git platform profiles to fetch stats from
 	profiles: [
 		{
-			username: 'derekjj',
+			username: 'your-github-username',
 			platform: 'github',
 			// Secret name in GitHub Actions (not the actual token)
 			tokenSecret: 'GITHUB_TOKEN',
 		},
 		{
-			username: 'DerekJJ',
+			username: 'your-gitlab-username',
 			platform: 'gitlab',
 			tokenSecret: 'GITLAB_TOKEN',
+		},
+		{
+			username: 'your-bitbucket-username',
+			platform: 'bitbucket',
+			// For Bitbucket, use an App Password
+			// Create at: https://bitbucket.org/account/settings/app-passwords/
+			tokenSecret: 'BITBUCKET_TOKEN',
 		},
 	],
 
