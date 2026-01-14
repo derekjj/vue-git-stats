@@ -4,7 +4,7 @@
 
 > Beautiful GitHub/GitLab contribution graphs and stats for Vue 3 with automated data fetching via GitHub Actions
 
-[![npm version](https://badge.fury.io/js/vue-git-stats.svg)](https://www.npmjs.com/package/vue-git-stats)
+[![npm version](https://img.shields.io/npm/v/vue-git-stats.svg)](https://www.npmjs.com/package/vue-git-stats)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ## Features
@@ -19,7 +19,7 @@
 
 ## Demo
 
-[View Live Demo](https://derekjj.github.io/vue-git-stats)
+[View Live Demo](https://derekjohnston.ca/demo)
 
 ## Installation
 
