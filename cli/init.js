@@ -243,9 +243,10 @@ ${envVars}
 `
 }
 
-// Run if called directly
-if (import.meta.url === `file://${process.argv[1]}`) {
-	init()
-}
+// Run the init function
+init().catch((error) => {
+	console.error('Failed to initialize:', error)
+	process.exit(1)
+})
 
 export { init, generateWorkflow }
