@@ -1,6 +1,6 @@
 {
 	"name": "vue-git-stats",
-	"version": "0.1.3",
+	"version": "0.1.4",
 	"description": "Beautiful GitHub/GitLab contribution graphs and stats for Vue 3 with automated data fetching",
 	"author": "Derek Johnston derek@derekjohnston.ca",
 	"license": "MIT",
