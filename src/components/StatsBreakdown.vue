@@ -75,145 +75,122 @@
 	</div>
 </template>
 
-<script>
+<script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { useGitStats } from '../composables/useGitStats'
+import type {
+	ExperienceEntry,
+	CustomStatCalculator,
+	CustomStatCalculatorParams,
+} from '../types'
 
-export default {
-	name: 'StatsBreakdown',
-	props: {
-		// Data source URL
-		dataUrl: {
-			type: String,
-			default: '/data/git-stats.json',
-		},
-		// Which profiles to aggregate (empty = all)
-		profileIndexes: {
-			type: Array,
-			default: () => [],
-		},
-		// Experience data (for years calculation)
-		experienceData: {
-			type: Array,
-			default: () => [],
-		},
-		// Show custom stat (coffee consumption)
-		showCustomStat: {
-			type: Boolean,
-			default: true,
-		},
-		// Custom stat calculation function
-		customStatCalculator: {
-			type: Function,
-			default: null,
-		},
-		// Cache configuration
-		cacheTTL: {
-			type: Number,
-			default: 24 * 60 * 60 * 1000,
-		},
-	},
-	setup(props) {
-		// Use the shared composable
-		const { data, loading, dataSourceText, lastUpdatedText } = useGitStats({
-			dataUrl: props.dataUrl,
-			cacheTTL: props.cacheTTL,
-		})
+interface Props {
+	dataUrl?: string
+	profileIndexes?: number[]
+	experienceData?: ExperienceEntry[]
+	showCustomStat?: boolean
+	customStatCalculator?: CustomStatCalculator | null
+	cacheTTL?: number
+}
 
-		const totalProjects = ref(0)
-		const totalCommits = ref(0)
+const props = withDefaults(defineProps<Props>(), {
+	dataUrl: '/data/git-stats.json',
+	profileIndexes: () => [],
+	experienceData: () => [],
+	showCustomStat: true,
+	customStatCalculator: null,
+	cacheTTL: 24 * 60 * 60 * 1000,
+})
 
-		// Calculate totals when data loads
-		watch(
-			data,
-			(newData) => {
-				if (!newData) return
+// Use the shared composable
+const { data, loading, dataSourceText, lastUpdatedText } = useGitStats({
+	dataUrl: props.dataUrl,
+	cacheTTL: props.cacheTTL,
+})
 
-				// If profileIndexes specified, sum only those profiles
-				if (props.profileIndexes.length > 0) {
-					let projects = 0
-					let commits = 0
+const totalProjects = ref(0)
+const totalCommits = ref(0)
 
-					props.profileIndexes.forEach((index) => {
-						const profile = newData.profiles?.[index]
-						if (profile?.stats) {
-							projects += profile.stats.projectCount || 0
-							commits += profile.stats.commitCount || 0
-						}
-					})
+// Calculate totals when data loads
+watch(
+	data,
+	(newData) => {
+		if (!newData) return
 
-					totalProjects.value = projects
-					totalCommits.value = commits
-				} else {
-					// Use totals from data (aggregates all profiles)
-					totalProjects.value = newData.totals?.projectCount || 0
-					totalCommits.value = newData.totals?.commitCount || 0
+		// If profileIndexes specified, sum only those profiles
+		if (props.profileIndexes.length > 0) {
+			let projects = 0
+			let commits = 0
+
+			props.profileIndexes.forEach((index) => {
+				const profile = newData.profiles?.[index]
+				if (profile?.stats) {
+					projects += profile.stats.projectCount || 0
+					commits += profile.stats.commitCount || 0
 				}
-			},
-			{ immediate: true }
-		)
-
-		// Calculate years of experience from experience data
-		const yearsExperience = computed(() => {
-			if (props.experienceData.length === 0) return '0.0'
-
-			const skillExperience = {}
-
-			props.experienceData.forEach((exp) => {
-				const durationYears = calculateYears(exp.startDate, exp.endDate)
-				exp.skills?.forEach((skill) => {
-					if (!skillExperience[skill]) {
-						skillExperience[skill] = 0
-					}
-					skillExperience[skill] += durationYears
-				})
 			})
 
-			// Get the highest skill experience
-			const maxYears = Math.max(...Object.values(skillExperience), 0)
-			return maxYears.toFixed(1)
-		})
-
-		// Custom stat calculation (e.g., coffee consumed)
-		const customStatValue = computed(() => {
-			if (props.customStatCalculator) {
-				return props.customStatCalculator({
-					projects: totalProjects.value,
-					commits: totalCommits.value,
-					years: parseFloat(yearsExperience.value),
-				})
-			}
-
-			// Default: fun coffee calculation
-			const kA = 1.5 // Coffee per project
-			const kB = 1.2 // Coffee per commit
-			const kC = 1.5 // Coffee per year
-
-			const cups =
-				totalProjects.value * kA +
-				totalCommits.value * kB +
-				parseFloat(yearsExperience.value) * kC
-
-			return cups.toFixed(2)
-		})
-
-		function calculateYears(startDate, endDate) {
-			endDate = endDate || new Date()
-			const millisecondsPerYear = 1000 * 60 * 60 * 24 * 365.25
-			const durationMilliseconds = new Date(endDate) - new Date(startDate)
-			return durationMilliseconds / millisecondsPerYear
-		}
-
-		return {
-			loading,
-			dataSourceText,
-			lastUpdatedText,
-			totalProjects,
-			totalCommits,
-			yearsExperience,
-			customStatValue,
+			totalProjects.value = projects
+			totalCommits.value = commits
+		} else {
+			// Use totals from data (aggregates all profiles)
+			totalProjects.value = newData.totals?.projectCount || 0
+			totalCommits.value = newData.totals?.commitCount || 0
 		}
 	},
+	{ immediate: true }
+)
+
+// Calculate years of experience from experience data
+const yearsExperience = computed(() => {
+	if (props.experienceData.length === 0) return '0.0'
+
+	const skillExperience: Record<string, number> = {}
+
+	props.experienceData.forEach((exp) => {
+		const durationYears = calculateYears(exp.startDate, exp.endDate)
+		exp.skills?.forEach((skill) => {
+			if (!skillExperience[skill]) {
+				skillExperience[skill] = 0
+			}
+			skillExperience[skill] += durationYears
+		})
+	})
+
+	// Get the highest skill experience
+	const maxYears = Math.max(...Object.values(skillExperience), 0)
+	return maxYears.toFixed(1)
+})
+
+// Custom stat calculation
+const customStatValue = computed(() => {
+	if (props.customStatCalculator) {
+		const params: CustomStatCalculatorParams = {
+			projects: totalProjects.value,
+			commits: totalCommits.value,
+			years: parseFloat(yearsExperience.value),
+		}
+		return props.customStatCalculator(params)
+	}
+
+	// Default: fun coffee calculation
+	const kA = 1.5 // Coffee per project
+	const kB = 1.2 // Coffee per commit
+	const kC = 1.5 // Coffee per year
+
+	const cups =
+		totalProjects.value * kA +
+		totalCommits.value * kB +
+		parseFloat(yearsExperience.value) * kC
+
+	return cups.toFixed(2)
+})
+
+function calculateYears(startDate: string, endDate: string | null): number {
+	const end = endDate ? new Date(endDate) : new Date()
+	const millisecondsPerYear = 1000 * 60 * 60 * 24 * 365.25
+	const durationMilliseconds = end.getTime() - new Date(startDate).getTime()
+	return durationMilliseconds / millisecondsPerYear
 }
 </script>
 

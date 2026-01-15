@@ -1,12 +1,20 @@
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import { resolve } from 'path'
+import dts from 'vite-plugin-dts'
 
 export default defineConfig({
-	plugins: [vue()],
+	plugins: [
+		vue(),
+		dts({
+			insertTypesEntry: true,
+			copyDtsFiles: true,
+			include: ['src/**/*.ts', 'src/**/*.vue'],
+		}),
+	],
 	build: {
 		lib: {
-			entry: resolve(__dirname, 'src/index.js'),
+			entry: resolve(__dirname, 'src/index.ts'),
 			name: 'VueGitStats',
 			fileName: (format) => `vue-git-stats.${format}.js`,
 		},
@@ -21,7 +29,7 @@ export default defineConfig({
 				// Export CSS separately
 				assetFileNames: (assetInfo) => {
 					if (assetInfo.name === 'style.css') return 'style.css'
-					return assetInfo.name
+					return assetInfo.name || 'asset'
 				},
 			},
 		},

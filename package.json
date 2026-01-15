@@ -1,7 +1,7 @@
 {
 	"name": "vue-git-stats",
 	"version": "0.1.6",
-	"description": "Beautiful GitHub/GitLab contribution graphs and stats for Vue 3 with automated data fetching",
+	"description": "Beautiful GitHub/GitLab/Bitbucket contribution graphs and stats for Vue 3 with automated data fetching",
 	"author": "Derek Johnston derek@derekjohnston.ca",
 	"license": "MIT",
 	"repository": {
@@ -13,6 +13,7 @@
 		"vue3",
 		"github",
 		"gitlab",
+		"bitbucket",
 		"contributions",
 		"stats",
 		"portfolio",
@@ -25,10 +26,12 @@
 	"exports": {
 		".": {
 			"import": "./dist/vue-git-stats.es.js",
-			"require": "./dist/vue-git-stats.umd.js"
+			"require": "./dist/vue-git-stats.umd.js",
+			"types": "./dist/index.d.ts"
 		},
 		"./style.css": "./dist/style.css"
 	},
+	"types": "./dist/index.d.ts",
 	"files": [
 		"dist",
 		"templates",
@@ -39,8 +42,13 @@
 	},
 	"scripts": {
 		"dev": "vite",
-		"build": "vite build",
+		"build": "vue-tsc && vite build",
 		"preview": "vite preview",
+		"test": "vitest",
+		"test:ui": "vitest --ui",
+		"test:run": "vitest run",
+		"test:coverage": "vitest run --coverage",
+		"type-check": "vue-tsc --noEmit",
 		"lint": "yarn lint:js && yarn lint:prettier",
 		"format": "prettier --write src/",
 		"demo": "vite demo --open",
@@ -54,12 +62,22 @@
 		"vue": "^3.3.0"
 	},
 	"devDependencies": {
+		"@testing-library/jest-dom": "^6.1.5",
+		"@types/node": "^20.10.6",
 		"@vitejs/plugin-vue": "^5.0.0",
+		"@vitest/ui": "^1.0.4",
+		"@vue/test-utils": "^2.4.3",
+		"@vue/tsconfig": "^0.5.1",
 		"eslint": "^8.57.0",
 		"eslint-plugin-vue": "^9.20.0",
+		"jsdom": "^23.0.1",
 		"prettier": "^3.2.0",
+		"typescript": "^5.3.3",
 		"vite": "^5.0.0",
-		"vue": "^3.4.0"
+		"vite-plugin-dts": "^3.7.0",
+		"vitest": "^1.0.4",
+		"vue": "^3.4.0",
+		"vue-tsc": "^2.0.0"
 	},
 	"engines": {
 		"node": ">=18.0.0"

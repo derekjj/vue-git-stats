@@ -15,7 +15,7 @@
 🛡️ **Reliable** - Multi-tier fallback system (static → cache → mock data)  
 📱 **Responsive** - Mobile-friendly with smooth scrolling  
 🎯 **Zero Config** - Works out of the box with sensible defaults  
-🔧 **Type Safe** - Full TypeScript support (coming soon)
+🔧 **Type Safe** - Full TypeScript support with exported types
 
 ## Demo
 

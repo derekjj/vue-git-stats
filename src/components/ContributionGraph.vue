@@ -116,255 +116,233 @@
 	</div>
 </template>
 
-<script>
+<script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { useGitStats } from '../composables/useGitStats'
+import type { ColorScheme, ContributionWeek } from '../types'
 
-export default {
-	name: 'ContributionGraph',
-	props: {
-		// Data source URL
-		dataUrl: {
-			type: String,
-			default: '/data/git-stats.json',
-		},
-		// Which profile to display (if multiple)
-		profileIndex: {
-			type: Number,
-			default: 0,
-		},
-		// Color scheme
-		colorScheme: {
-			type: String,
-			default: 'green',
-			validator: (value) =>
-				['green', 'blue', 'purple', 'orange'].includes(value),
-		},
-		// Show settings dropdown
-		showSettings: {
-			type: Boolean,
-			default: true,
-		},
-		// Cache configuration
-		cacheTTL: {
-			type: Number,
-			default: 24 * 60 * 60 * 1000, // 24 hours
-		},
-	},
-	emits: ['day-click', 'color-scheme-change'],
-	setup(props, { emit }) {
-		// Use the shared composable
-		const { data, loading, dataSourceText, lastUpdatedText, isDummy } =
-			useGitStats({
-				dataUrl: props.dataUrl,
-				cacheTTL: props.cacheTTL,
-			})
+interface ProcessedWeek {
+	weekStart: string
+	days: ProcessedDay[]
+}
 
-		const currentColorScheme = ref(props.colorScheme)
-		const settingsOpen = ref(false)
-		const colorSchemes = ['green', 'blue', 'purple', 'orange']
-		const contributionData = ref([])
-		const monthLabels = ref([])
+interface ProcessedDay {
+	date: string
+	count: number
+	weekday: number
+}
 
-		// Process contribution data when loaded
-		watch(
-			data,
-			(newData) => {
-				if (
-					newData?.profiles?.[props.profileIndex]?.stats
-						?.contributions
-				) {
-					const contributions =
-						newData.profiles[props.profileIndex].stats.contributions
-					contributionData.value = processContributions(contributions)
-					generateMonthLabels()
-				} else {
-					// No data yet, use empty array
-					contributionData.value = []
-				}
-			},
-			{ immediate: true }
-		)
+interface MonthLabel {
+	week: number
+	month: number
+	year: number
+	label: string
+}
 
-		const totalContributions = computed(() => {
-			if (
-				!contributionData.value ||
-				contributionData.value.length === 0
-			) {
-				return 0
+interface Props {
+	dataUrl?: string
+	profileIndex?: number
+	colorScheme?: ColorScheme
+	showSettings?: boolean
+	cacheTTL?: number
+}
+
+interface Emits {
+	(e: 'day-click', data: { date: string; count: number }): void
+	(e: 'color-scheme-change', scheme: ColorScheme): void
+}
+
+const props = withDefaults(defineProps<Props>(), {
+	dataUrl: '/data/git-stats.json',
+	profileIndex: 0,
+	colorScheme: 'green',
+	showSettings: true,
+	cacheTTL: 24 * 60 * 60 * 1000,
+})
+
+const emit = defineEmits<Emits>()
+
+// Use the shared composable
+const { data, loading, dataSourceText, lastUpdatedText, isDummy } = useGitStats(
+	{
+		dataUrl: props.dataUrl,
+		cacheTTL: props.cacheTTL,
+	}
+)
+
+const currentColorScheme = ref<ColorScheme>(props.colorScheme)
+const settingsOpen = ref(false)
+const colorSchemes: ColorScheme[] = ['green', 'blue', 'purple', 'orange']
+const contributionData = ref<ProcessedWeek[]>([])
+const monthLabels = ref<MonthLabel[]>([])
+
+// Process contribution data when loaded
+watch(
+	data,
+	(newData) => {
+		if (newData?.profiles?.[props.profileIndex]?.stats?.contributions) {
+			const contributions =
+				newData.profiles[props.profileIndex].stats.contributions
+			if (contributions) {
+				contributionData.value = processContributions(contributions)
+				generateMonthLabels()
 			}
+		} else {
+			contributionData.value = []
+		}
+	},
+	{ immediate: true }
+)
 
-			return contributionData.value.reduce((total, week) => {
-				if (!week.days || !Array.isArray(week.days)) {
-					return total
-				}
-				return (
-					total +
-					week.days.reduce((weekTotal, day) => {
-						return weekTotal + (day.count || 0)
-					}, 0)
-				)
+const totalContributions = computed(() => {
+	if (!contributionData.value || contributionData.value.length === 0) {
+		return 0
+	}
+
+	return contributionData.value.reduce((total, week) => {
+		if (!week.days || !Array.isArray(week.days)) {
+			return total
+		}
+		return (
+			total +
+			week.days.reduce((weekTotal, day) => {
+				return weekTotal + (day.count || 0)
 			}, 0)
+		)
+	}, 0)
+})
+
+function processContributions(
+	contributions: ContributionWeek[]
+): ProcessedWeek[] {
+	if (!contributions || !Array.isArray(contributions)) {
+		return generateEmptyWeeks()
+	}
+
+	const weeks = contributions.map((week) => ({
+		weekStart: week.firstDay || '',
+		days: week.contributionDays.map((day) => ({
+			date: day.date || '',
+			count: day.contributionCount ?? 0,
+			weekday: day.weekday || 0,
+		})),
+	}))
+
+	while (weeks.length < 53) {
+		weeks.push(generateEmptyWeek())
+	}
+
+	return weeks
+}
+
+function generateEmptyWeeks(): ProcessedWeek[] {
+	const weeks: ProcessedWeek[] = []
+	for (let i = 0; i < 53; i++) {
+		weeks.push(generateEmptyWeek())
+	}
+	return weeks
+}
+
+function generateEmptyWeek(): ProcessedWeek {
+	const days: ProcessedDay[] = []
+	for (let i = 0; i < 7; i++) {
+		days.push({
+			date: '',
+			count: 0,
+			weekday: i,
 		})
+	}
+	return {
+		weekStart: '',
+		days,
+	}
+}
 
-		function processContributions(contributions) {
-			if (!contributions || !Array.isArray(contributions)) {
-				// Return empty 53 weeks
-				return generateEmptyWeeks()
-			}
+function generateMonthLabels(): void {
+	if (!contributionData.value || contributionData.value.length === 0) {
+		monthLabels.value = []
+		return
+	}
 
-			// Ensure we have 53 weeks
-			const weeks = contributions.map((week) => ({
-				weekStart: week.firstDay || week.weekStart || '',
-				days: (week.contributionDays || week.days || []).map((day) => ({
-					date: day.date || '',
-					count:
-						day.contributionCount !== undefined
-							? day.contributionCount
-							: day.count || 0,
-					weekday: day.weekday || 0,
-				})),
-			}))
+	const monthPositions: MonthLabel[] = []
+	let lastMonth = -1
+	let lastYear = -1
 
-			while (weeks.length < 53) {
-				weeks.push(generateEmptyWeek())
-			}
+	contributionData.value.forEach((week, weekIndex) => {
+		if (!week.days || week.days.length === 0) return
 
-			return weeks
-		}
+		const firstDay = week.days[0].date
+		if (!firstDay) return
 
-		function generateEmptyWeeks() {
-			const weeks = []
-			for (let i = 0; i < 53; i++) {
-				weeks.push(generateEmptyWeek())
-			}
-			return weeks
-		}
+		const dateParts = firstDay.split('-')
+		if (dateParts.length !== 3) return
 
-		function generateEmptyWeek() {
-			const days = []
-			for (let i = 0; i < 7; i++) {
-				days.push({
-					date: '',
-					count: 0,
-					weekday: i,
-				})
-			}
-			return {
-				weekStart: '',
-				days,
-			}
-		}
+		const [year, month] = dateParts.map(Number)
+		if (isNaN(year) || isNaN(month)) return
 
-		function generateMonthLabels() {
-			if (
-				!contributionData.value ||
-				contributionData.value.length === 0
-			) {
-				monthLabels.value = []
-				return
-			}
-
-			const monthPositions = []
-			let lastMonth = -1
-			let lastYear = -1
-
-			contributionData.value.forEach((week, weekIndex) => {
-				if (!week.days || week.days.length === 0) return
-
-				const firstDay = week.days[0].date
-				if (!firstDay) return
-
-				const dateParts = firstDay.split('-')
-				if (dateParts.length !== 3) return
-
-				const [year, month] = dateParts.map(Number)
-				if (isNaN(year) || isNaN(month)) return
-
-				if (month !== lastMonth || year !== lastYear) {
-					const date = new Date(year, month - 1, 1)
-					monthPositions.push({
-						week: weekIndex,
-						month: month - 1,
-						year: year,
-						label: date.toLocaleDateString('en-US', {
-							month: 'short',
-						}),
-					})
-					lastMonth = month
-					lastYear = year
-				}
+		if (month !== lastMonth || year !== lastYear) {
+			const date = new Date(year, month - 1, 1)
+			monthPositions.push({
+				week: weekIndex,
+				month: month - 1,
+				year: year,
+				label: date.toLocaleDateString('en-US', {
+					month: 'short',
+				}),
 			})
-
-			monthLabels.value = monthPositions
+			lastMonth = month
+			lastYear = year
 		}
+	})
 
-		function getContributionLevel(count) {
-			const level = getContributionLevelNumber(count)
-			return `level-${level} ${currentColorScheme.value}`
-		}
+	monthLabels.value = monthPositions
+}
 
-		function getContributionLevelNumber(count) {
-			if (count === 0) return 0
-			if (count <= 3) return 1
-			if (count <= 6) return 2
-			if (count <= 9) return 3
-			return 4
-		}
+function getContributionLevel(count: number): string {
+	const level = getContributionLevelNumber(count)
+	return `level-${level} ${currentColorScheme.value}`
+}
 
-		function getTooltipText(day) {
-			if (!day.date) return ''
+function getContributionLevelNumber(count: number): number {
+	if (count === 0) return 0
+	if (count <= 3) return 1
+	if (count <= 6) return 2
+	if (count <= 9) return 3
+	return 4
+}
 
-			const [year, month, dayNum] = day.date.split('-').map(Number)
-			const date = new Date(year, month - 1, dayNum)
+function getTooltipText(day: ProcessedDay): string {
+	if (!day.date) return ''
 
-			const formattedDate = date.toLocaleDateString('en-US', {
-				weekday: 'short',
-				year: 'numeric',
-				month: 'short',
-				day: 'numeric',
-			})
+	const [year, month, dayNum] = day.date.split('-').map(Number)
+	const date = new Date(year, month - 1, dayNum)
 
-			const contributionText =
-				day.count === 1 ? 'contribution' : 'contributions'
-			return `${day.count} ${contributionText} on ${formattedDate}`
-		}
+	const formattedDate = date.toLocaleDateString('en-US', {
+		weekday: 'short',
+		year: 'numeric',
+		month: 'short',
+		day: 'numeric',
+	})
 
-		function onDayClick(day) {
-			emit('day-click', {
-				date: day.date,
-				count: day.count,
-			})
-		}
+	const contributionText = day.count === 1 ? 'contribution' : 'contributions'
+	return `${day.count} ${contributionText} on ${formattedDate}`
+}
 
-		function toggleSettings() {
-			settingsOpen.value = !settingsOpen.value
-		}
+function onDayClick(day: ProcessedDay): void {
+	emit('day-click', {
+		date: day.date,
+		count: day.count,
+	})
+}
 
-		function changeColorScheme(scheme) {
-			currentColorScheme.value = scheme
-			settingsOpen.value = false
-			emit('color-scheme-change', scheme)
-		}
+function toggleSettings(): void {
+	settingsOpen.value = !settingsOpen.value
+}
 
-		return {
-			loading,
-			dataSourceText,
-			lastUpdatedText,
-			isDummy,
-			contributionData,
-			monthLabels,
-			totalContributions,
-			currentColorScheme,
-			settingsOpen,
-			colorSchemes,
-			getContributionLevel,
-			getTooltipText,
-			onDayClick,
-			toggleSettings,
-			changeColorScheme,
-		}
-	},
+function changeColorScheme(scheme: ColorScheme): void {
+	currentColorScheme.value = scheme
+	settingsOpen.value = false
+	emit('color-scheme-change', scheme)
 }
 </script>
 

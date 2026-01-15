@@ -1,25 +1,29 @@
 import { ref, computed } from 'vue'
+import type {
+	GitStatsData,
+	GitStatsConfig,
+	UseGitStatsReturn,
+	ContributionWeek,
+} from '../types'
 
 /**
  * Composable for loading and caching git stats data
- * @param {Object} config - Configuration object
- * @param {string} config.dataUrl - URL to the stats JSON file
- * @param {number} config.cacheTTL - Cache time-to-live in milliseconds
- * @param {boolean} config.useStaleCache - Whether to use stale cache as fallback
+ * @param config - Configuration object
  */
-export function useGitStats(config = {}) {
+export function useGitStats(config: GitStatsConfig = {}): UseGitStatsReturn {
 	const {
 		dataUrl = '/data/git-stats.json',
-		cacheTTL = 24 * 60 * 60 * 1000, // 24 hours
+		// TODO: is this required?
+		// cacheTTL = 24 * 60 * 60 * 1000, // 24 hours
 		useStaleCache = true,
 		cacheKey = 'git_stats_cache',
 	} = config
 
 	const loading = ref(false)
-	const error = ref(null)
-	const data = ref(null)
-	const dataSource = ref(null) // 'static', 'cache', 'mock', or 'dummy'
-	const isDummy = ref(false) // True if using dummy/test data
+	const error = ref<Error | null>(null)
+	const data = ref<GitStatsData | null>(null)
+	const dataSource = ref<'static' | 'cache' | 'mock' | 'dummy' | null>(null)
+	const isDummy = ref(false)
 
 	/**
 	 * Load data with fallback strategy:
@@ -27,7 +31,7 @@ export function useGitStats(config = {}) {
 	 * 2. Try browser cache
 	 * 3. Use mock data
 	 */
-	async function loadData() {
+	async function loadData(): Promise<GitStatsData | null> {
 		loading.value = true
 		error.value = null
 
@@ -43,7 +47,8 @@ export function useGitStats(config = {}) {
 			}
 		} catch (err) {
 			console.warn('Failed to load from static file:', err)
-			error.value = err.message
+			error.value =
+				err instanceof Error ? err : new Error('Failed to load data')
 		}
 
 		// Fallback to cached data
@@ -71,7 +76,7 @@ export function useGitStats(config = {}) {
 	/**
 	 * Load data from static JSON file
 	 */
-	async function loadFromStaticFile() {
+	async function loadFromStaticFile(): Promise<GitStatsData | null> {
 		const response = await fetch(dataUrl)
 		if (!response.ok) {
 			throw new Error(`HTTP error! status: ${response.status}`)
@@ -82,24 +87,21 @@ export function useGitStats(config = {}) {
 	/**
 	 * Load data from localStorage cache
 	 */
-	function loadFromCache() {
+	function loadFromCache(): GitStatsData | null {
 		const cached = localStorage.getItem(cacheKey)
 		if (!cached) return null
 
-		const parsedCache = JSON.parse(cached)
-		const cacheAge = Date.now() - (parsedCache.cachedAt || 0)
-
-		// Return cached data even if stale (better than nothing)
+		const parsedCache: GitStatsData = JSON.parse(cached)
 		return parsedCache
 	}
 
 	/**
 	 * Save data to localStorage cache
 	 */
-	function cacheData(data) {
+	function cacheData(dataToCache: GitStatsData): void {
 		try {
-			const cacheData = {
-				...data,
+			const cacheData: GitStatsData = {
+				...dataToCache,
 				cachedAt: Date.now(),
 			}
 			localStorage.setItem(cacheKey, JSON.stringify(cacheData))
@@ -111,7 +113,7 @@ export function useGitStats(config = {}) {
 	/**
 	 * Generate mock data for development/fallback
 	 */
-	function generateMockData() {
+	function generateMockData(): GitStatsData {
 		return {
 			lastUpdated: new Date().toISOString(),
 			profiles: [
@@ -139,8 +141,8 @@ export function useGitStats(config = {}) {
 	/**
 	 * Generate mock contribution data (53 weeks)
 	 */
-	function generateMockContributions() {
-		const weeks = []
+	function generateMockContributions(): ContributionWeek[] {
+		const weeks: ContributionWeek[] = []
 		const now = new Date()
 		const endDate = new Date(now)
 		endDate.setDate(endDate.getDate() - endDate.getDay())
@@ -151,18 +153,19 @@ export function useGitStats(config = {}) {
 		const currentDate = new Date(startDate)
 
 		for (let week = 0; week < 53; week++) {
-			const weekData = {
-				weekStart: new Date(currentDate).toISOString().split('T')[0],
-				days: [],
+			const weekData: ContributionWeek = {
+				firstDay: new Date(currentDate).toISOString().split('T')[0],
+				contributionDays: [],
 			}
 
 			for (let day = 0; day < 7; day++) {
 				const isInFuture = currentDate > now
 				const dayCount = isInFuture ? 0 : Math.floor(Math.random() * 15)
 
-				weekData.days.push({
+				weekData.contributionDays.push({
 					date: new Date(currentDate).toISOString().split('T')[0],
-					count: dayCount,
+					contributionCount: dayCount,
+					weekday: day,
 				})
 				currentDate.setDate(currentDate.getDate() + 1)
 			}
@@ -181,7 +184,9 @@ export function useGitStats(config = {}) {
 
 		const date = new Date(data.value.lastUpdated)
 		const now = new Date()
-		const diffHours = Math.floor((now - date) / (1000 * 60 * 60))
+		const diffHours = Math.floor(
+			(now.getTime() - date.getTime()) / (1000 * 60 * 60)
+		)
 
 		if (diffHours < 1) return 'just now'
 		if (diffHours < 24) return `${diffHours} hours ago`
